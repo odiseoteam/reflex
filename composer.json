@@ -1,0 +1,119 @@
+{
+    "type": "project",
+    "description": "Self-hosted Symfony app that reacts to company events over MCP, acts within per-tool policies and escalates big decisions to people.",
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "prefer-stable": true,
+    "require": {
+        "ext-ctype": "*",
+        "ext-iconv": "*",
+        "php": ">=8.4",
+        "doctrine/doctrine-bundle": "^3.4",
+        "doctrine/doctrine-migrations-bundle": "^4.0",
+        "doctrine/orm": "^3.8",
+        "mcp/sdk": "^0.10",
+        "nyholm/psr7": "^1.8",
+        "symfony/ai-agent": "dev-main as 1.0.x-dev",
+        "symfony/ai-bundle": "dev-main as 1.0.x-dev",
+        "symfony/ai-generic-platform": "dev-main as 1.0.x-dev",
+        "symfony/ai-hugging-face-platform": "dev-main as 1.0.x-dev",
+        "symfony/ai-mcp-tool": "dev-main as 1.0.x-dev",
+        "symfony/ai-platform": "dev-main as 1.0.x-dev",
+        "symfony/ai-postgres-store": "dev-main as 1.0.x-dev",
+        "symfony/ai-store": "dev-main as 1.0.x-dev",
+        "symfony/console": "8.1.*",
+        "symfony/doctrine-messenger": "8.1.*",
+        "symfony/dotenv": "8.1.*",
+        "symfony/flex": "^2",
+        "symfony/framework-bundle": "8.1.*",
+        "symfony/mcp-bundle": "dev-main as 1.0.x-dev",
+        "symfony/messenger": "8.1.*",
+        "symfony/monolog-bundle": "^4.1",
+        "symfony/runtime": "8.1.*",
+        "symfony/yaml": "8.1.*"
+    },
+    "require-dev": {
+        "friendsofphp/php-cs-fixer": "^3.95",
+        "phpstan/extension-installer": "^1.4",
+        "phpstan/phpstan": "^2.3",
+        "phpstan/phpstan-doctrine": "^2.1",
+        "phpstan/phpstan-phpunit": "^2.1",
+        "phpstan/phpstan-symfony": "^2.1",
+        "phpunit/phpunit": "^13.4",
+        "symfony/browser-kit": "8.1.*",
+        "symfony/css-selector": "8.1.*",
+        "symfony/maker-bundle": "^1.68"
+    },
+    "config": {
+        "allow-plugins": {
+            "php-http/discovery": true,
+            "symfony/flex": true,
+            "symfony/runtime": true,
+            "phpstan/extension-installer": true
+        },
+        "bump-after-update": true,
+        "sort-packages": true
+    },
+    "autoload": {
+        "psr-4": {
+            "App\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "App\\Tests\\": "tests/"
+        }
+    },
+    "replace": {
+        "symfony/polyfill-ctype": "*",
+        "symfony/polyfill-iconv": "*",
+        "symfony/polyfill-php72": "*",
+        "symfony/polyfill-php73": "*",
+        "symfony/polyfill-php74": "*",
+        "symfony/polyfill-php80": "*",
+        "symfony/polyfill-php81": "*",
+        "symfony/polyfill-php82": "*",
+        "symfony/polyfill-php83": "*",
+        "symfony/polyfill-php84": "*"
+    },
+    "scripts": {
+        "auto-scripts": {
+            "cache:clear": "symfony-cmd",
+            "assets:install %PUBLIC_DIR%": "symfony-cmd"
+        },
+        "post-install-cmd": [
+            "@auto-scripts"
+        ],
+        "post-update-cmd": [
+            "@auto-scripts"
+        ],
+        "cs": "php-cs-fixer fix --dry-run --diff",
+        "cs:fix": "php-cs-fixer fix",
+        "phpstan": [
+            "@php bin/console cache:warmup --env=dev --quiet",
+            "phpstan analyse --memory-limit=1G --no-progress"
+        ],
+        "test:db": [
+            "@php bin/console doctrine:database:create --env=test --if-not-exists --quiet",
+            "@php bin/console doctrine:migrations:migrate --env=test --no-interaction --quiet"
+        ],
+        "test": [
+            "@test:db",
+            "phpunit"
+        ],
+        "ci": [
+            "@cs",
+            "@phpstan",
+            "@test"
+        ]
+    },
+    "conflict": {
+        "symfony/symfony": "*"
+    },
+    "extra": {
+        "symfony": {
+            "allow-contrib": false,
+            "require": "8.1.*"
+        }
+    }
+}

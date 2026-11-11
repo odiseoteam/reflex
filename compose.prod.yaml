@@ -1,0 +1,15 @@
+# Production setup: docker compose -f compose.yaml -f compose.prod.yaml up --wait
+services:
+  php:
+    build:
+      context: .
+      target: frankenphp_prod
+    environment:
+      APP_SECRET: ${APP_SECRET}
+
+  worker:
+    build:
+      context: .
+      target: frankenphp_prod
+    environment:
+      APP_SECRET: ${APP_SECRET}

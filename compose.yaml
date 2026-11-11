@@ -1,0 +1,44 @@
+services:
+  php:
+    image: ${IMAGES_PREFIX:-}reflex-php
+    restart: unless-stopped
+    environment:
+      SERVER_NAME: ${SERVER_NAME:-:8080}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-!ChangeMe!}@database:5432/${POSTGRES_DB:-app}?serverVersion=${POSTGRES_VERSION:-18}&charset=${POSTGRES_CHARSET:-utf8}
+    depends_on:
+      database:
+        condition: service_healthy
+    ports:
+      - target: 8080
+        published: ${HTTP_PORT:-8088}
+        protocol: tcp
+
+  worker:
+    image: ${IMAGES_PREFIX:-}reflex-php
+    restart: unless-stopped
+    command: ['php', 'bin/console', 'messenger:consume', 'async', '--time-limit=3600', '-vv']
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-!ChangeMe!}@database:5432/${POSTGRES_DB:-app}?serverVersion=${POSTGRES_VERSION:-18}&charset=${POSTGRES_CHARSET:-utf8}
+    healthcheck:
+      disable: true
+    depends_on:
+      php:
+        condition: service_healthy
+
+  database:
+    image: pgvector/pgvector:0.8.7-pg${POSTGRES_VERSION:-18}-trixie
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-app}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-!ChangeMe!}
+      POSTGRES_USER: ${POSTGRES_USER:-app}
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-d', '${POSTGRES_DB:-app}', '-U', '${POSTGRES_USER:-app}']
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    volumes:
+      - database_data:/var/lib/postgresql
+
+volumes:
+  database_data:

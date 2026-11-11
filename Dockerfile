@@ -1,0 +1,78 @@
+#syntax=docker/dockerfile:1
+
+FROM dunglas/frankenphp:1-php8.5 AS frankenphp_upstream
+
+# Base image shared by dev and prod
+FROM frankenphp_upstream AS frankenphp_base
+
+WORKDIR /app
+
+# hadolint ignore=DL3008
+RUN apt-get update && apt-get install -y --no-install-recommends \
+	acl \
+	curl \
+	file \
+	gettext \
+	git \
+	&& rm -rf /var/lib/apt/lists/*
+
+RUN set -eux; \
+	install-php-extensions \
+		@composer \
+		apcu \
+		intl \
+		opcache \
+		pdo_pgsql \
+		zip \
+	;
+
+ENV COMPOSER_ALLOW_SUPERUSER=1
+# Writable from any user, so the dev container can run as the host user
+ENV XDG_CONFIG_HOME=/tmp/xdg/config \
+	XDG_DATA_HOME=/tmp/xdg/data \
+	COMPOSER_HOME=/tmp/composer
+
+ENV PHP_INI_SCAN_DIR=":$PHP_INI_DIR/app.conf.d"
+
+COPY --link docker/frankenphp/conf.d/10-app.ini $PHP_INI_DIR/app.conf.d/
+COPY --link --chmod=755 docker/frankenphp/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
+COPY --link docker/frankenphp/Caddyfile /etc/frankenphp/Caddyfile
+
+ENTRYPOINT ["docker-entrypoint"]
+
+HEALTHCHECK --start-period=60s CMD curl -f http://localhost:2019/metrics || exit 1
+CMD [ "frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile" ]
+
+# Dev image: sources are bind-mounted
+FROM frankenphp_base AS frankenphp_dev
+
+ENV APP_ENV=dev
+ENV FRANKENPHP_WORKER_CONFIG=watch
+
+RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
+
+COPY --link docker/frankenphp/conf.d/20-app.dev.ini $PHP_INI_DIR/app.conf.d/
+
+CMD [ "frankenphp", "run", "--config", "/etc/frankenphp/Caddyfile", "--watch" ]
+
+# Prod image: sources and vendors baked in
+FROM frankenphp_base AS frankenphp_prod
+
+ENV APP_ENV=prod
+
+RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
+
+COPY --link docker/frankenphp/conf.d/20-app.prod.ini $PHP_INI_DIR/app.conf.d/
+
+COPY --link composer.* symfony.* ./
+RUN set -eux; \
+	composer install --no-cache --prefer-dist --no-dev --no-autoloader --no-scripts --no-progress
+
+COPY --link --exclude=docker/ . ./
+
+RUN set -eux; \
+	mkdir -p var/cache var/log; \
+	composer dump-autoload --classmap-authoritative --no-dev; \
+	composer dump-env prod; \
+	composer run-script --no-dev post-install-cmd; \
+	chmod +x bin/console; sync;

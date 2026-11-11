@@ -1,0 +1,81 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint, static analysis and tests
+    runs-on: ubuntu-latest
+    services:
+      database:
+        image: pgvector/pgvector:0.8.7-pg18-trixie
+        env:
+          POSTGRES_DB: app
+          POSTGRES_USER: app
+          POSTGRES_PASSWORD: '!ChangeMe!'
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -d app -U app"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: 'postgresql://app:!ChangeMe!@127.0.0.1:5432/app?serverVersion=18&charset=utf8'
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: apcu, intl, pdo_pgsql, zip
+          coverage: none
+          tools: composer:v2
+
+      - name: Cache Composer packages
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/composer
+          key: composer-${{ hashFiles('composer.lock') }}
+          restore-keys: composer-
+
+      - run: composer validate --strict --no-check-publish
+      - run: composer install --prefer-dist --no-progress --no-interaction
+
+      - name: Lint container and config
+        run: |
+          bin/console lint:container
+          bin/console lint:yaml config --parse-tags
+          bin/console doctrine:schema:validate --skip-sync
+
+      - run: composer cs
+      - run: composer phpstan
+      - run: composer test
+
+  docker:
+    name: Docker Compose smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Start the stack
+        run: docker compose up --wait --build
+
+      - name: Check health endpoint
+        run: curl --fail --silent --show-error http://localhost:8088/health
+
+      - name: Check migrations are applied
+        run: docker compose exec -T php bin/console doctrine:migrations:up-to-date
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose logs
+
+      - if: always()
+        run: docker compose down --remove-orphans
