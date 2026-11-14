@@ -21,6 +21,22 @@ services:
       - ./:/app
       - ./docker/frankenphp/conf.d/20-app.dev.ini:/usr/local/etc/php/app.conf.d/20-app.dev.ini:ro
 
+  tailwind:
+    build:
+      context: .
+      target: frankenphp_dev
+    user: '${UID:-1000}:${GID:-1000}'
+    command: ['php', 'bin/console', 'tailwind:build', '--watch']
+    # Tailwind's watcher exits when stdin closes
+    tty: true
+    volumes:
+      - ./:/app
+    healthcheck:
+      disable: true
+    depends_on:
+      php:
+        condition: service_healthy
+
   database:
     # Random host port to avoid clashing with a local Postgres
     ports:

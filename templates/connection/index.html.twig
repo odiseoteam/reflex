@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Connections · Reflex{% endblock %}
+
+{% block body %}
+    <div class="mb-6 flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-semibold">Connections</h1>
+            <p class="text-sm text-slate-600">MCP servers Reflex can read from and act on.</p>
+        </div>
+        <a href="{{ path('app_connection_new') }}" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">Connect a server</a>
+    </div>
+
+    {% if connections is empty %}
+        <div class="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center text-slate-600">
+            No connections yet. Connect an MCP server to give agents its tools.
+        </div>
+    {% else %}
+        <ul class="divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white">
+            {% for connection in connections %}
+                <li>
+                    <a href="{{ path('app_connection_show', {id: connection.id}) }}" class="flex items-center justify-between px-4 py-3 hover:bg-slate-50">
+                        <div>
+                            <div class="font-medium">{{ connection.name }}</div>
+                            <div class="text-sm text-slate-500">{{ connection.url }}</div>
+                        </div>
+                        <div class="flex items-center gap-4 text-sm text-slate-600">
+                            <span>{{ connection.tools|length }} tools</span>
+                            {{ include('connection/_status.html.twig', {status: connection.status}) }}
+                        </div>
+                    </a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}
