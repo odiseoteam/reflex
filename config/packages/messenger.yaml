@@ -11,7 +11,9 @@ framework:
                     multiplier: 2
             failed: 'doctrine://default?queue_name=failed&auto_setup=0'
 
-        routing: {}
+        routing:
+            App\Message\RunReflex: async
+            Symfony\Component\RemoteEvent\Messenger\ConsumeRemoteEventMessage: async
 
 when@test:
     framework:

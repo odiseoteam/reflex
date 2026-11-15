@@ -1,0 +1,6 @@
+framework:
+    webhook:
+        routing:
+            generic:
+                service: App\Webhook\GenericRequestParser
+                secret: '%env(REFLEX_WEBHOOK_SECRET)%'

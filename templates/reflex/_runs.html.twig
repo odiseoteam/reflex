@@ -1,0 +1,22 @@
+{% if runs is empty %}
+    <p class="text-sm text-slate-600">No runs yet.</p>
+{% else %}
+    <ul class="divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white">
+        {% for run in runs %}
+            <li>
+                <a href="{{ path('app_run_show', {id: run.id}) }}" class="flex items-center justify-between gap-4 px-4 py-3 hover:bg-slate-50">
+                    <div class="min-w-0">
+                        <div class="text-sm font-medium">{{ run.reflexSnapshot.name }}</div>
+                        <div class="truncate text-xs text-slate-500">
+                            {{ run.event ? run.event.source ~ ' · ' ~ run.event.type : 'Manual run' }} · {{ run.createdAt|date('Y-m-d H:i:s') }}
+                        </div>
+                    </div>
+                    <div class="flex shrink-0 items-center gap-3 text-xs text-slate-600">
+                        <span>{{ run.steps|length }} steps</span>
+                        {{ include('reflex/_run_status.html.twig', {status: run.status}) }}
+                    </div>
+                </a>
+            </li>
+        {% endfor %}
+    </ul>
+{% endif %}
