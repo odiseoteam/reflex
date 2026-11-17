@@ -4,12 +4,15 @@ declare(strict_types=1);
 
 namespace App\Tests\Engine;
 
+use App\Engine\ConnectedToolbox;
 use App\Engine\PolicyToolbox;
 use App\Engine\RunLimitExceededException;
+use App\Entity\Decision;
 use App\Entity\Reflex;
 use App\Entity\Run;
 use App\Entity\RunStepKind;
 use App\Entity\ToolPolicy;
+use App\Repository\DecisionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\AI\Agent\Agent;
 use Symfony\AI\Agent\Toolbox\ToolboxInterface;
@@ -99,6 +102,25 @@ final class PolicyToolboxTest extends KernelTestCase
         self::assertSame(RunStepKind::Proposal, $step->getKind());
     }
 
+    public function testAProposalBecomesADecisionWithItsReason(): void
+    {
+        $tools = [];
+        foreach ($this->toolbox()->getTools() as $tool) {
+            $tools[$tool->getName()] = $tool;
+        }
+        $parameters = $tools['tracker_close_issue']->getParameters() ?? [];
+        self::assertContains(PolicyToolbox::REASON_ARGUMENT, $parameters['required'] ?? []);
+
+        $this->toolbox()->execute(new ToolCall('1', 'tracker_close_issue', ['id' => 7, PolicyToolbox::REASON_ARGUMENT => 'Duplicate of #3.']));
+
+        $decisions = $this->decisions()->findByRun($this->run);
+        self::assertCount(1, $decisions);
+        self::assertSame(['id' => 7], $decisions[0]->getArguments());
+        self::assertSame('Duplicate of #3.', $decisions[0]->getReason());
+        self::assertSame(Decision::PROPOSED, $decisions[0]->getStatus());
+        self::assertSame($decisions[0]->getWaitpoint(), $this->decisions()->findOpenWaitpoint($this->run));
+    }
+
     public function testAResumedRunReusesCompletedCalls(): void
     {
         $first = $this->toolbox()->execute(new ToolCall('1', 'tracker_list_issues', ['state' => 'open', 'page' => 1]));
@@ -133,7 +155,7 @@ final class PolicyToolboxTest extends KernelTestCase
 
     public function testStopsAtTheDeadline(): void
     {
-        $toolbox = new PolicyToolbox($this->run, [$this->tracker], $this->entityManager, new \DateTimeImmutable('-1 second'));
+        $toolbox = new PolicyToolbox($this->run, [new ConnectedToolbox($this->tracker)], $this->entityManager, $this->decisions(), new \DateTimeImmutable('-1 second'));
 
         $this->expectException(RunLimitExceededException::class);
         $toolbox->execute(new ToolCall('1', 'tracker_list_issues'));
@@ -141,7 +163,12 @@ final class PolicyToolboxTest extends KernelTestCase
 
     private function toolbox(): PolicyToolbox
     {
-        return new PolicyToolbox($this->run, [$this->tracker], $this->entityManager);
+        return new PolicyToolbox($this->run, [new ConnectedToolbox($this->tracker)], $this->entityManager, $this->decisions());
+    }
+
+    private function decisions(): DecisionRepository
+    {
+        return self::getContainer()->get(DecisionRepository::class);
     }
 }
 

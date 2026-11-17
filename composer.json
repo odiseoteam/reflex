@@ -40,6 +40,7 @@
         "symfony/ux-turbo": "^3.7",
         "symfony/validator": "8.1.*",
         "symfony/webhook": "8.1.*",
+        "symfony/workflow": "8.1.*",
         "symfony/yaml": "8.1.*",
         "symfonycasts/tailwind-bundle": "^1.0"
     },

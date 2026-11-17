@@ -4,7 +4,7 @@
 
 {% block body %}
     {# Refresh until the worker finishes #}
-    {% if not run.status.finished %}
+    {% if run.status.value in ['queued', 'running'] %}
         <meta http-equiv="refresh" content="2">
     {% endif %}
 
@@ -62,6 +62,14 @@
             </ol>
         {% endif %}
     </section>
+
+    {% if decisions is not empty %}
+        <section class="mb-6">
+            <h2 class="mb-2 text-lg font-semibold">Decisions</h2>
+            {% if run.status.value == 'waiting' %}<p class="mb-2 text-sm text-amber-800">Paused until people decide in the <a class="underline" href="{{ path('app_inbox') }}">inbox</a>.</p>{% endif %}
+            {{ include('decision/_list.html.twig') }}
+        </section>
+    {% endif %}
 
     {% if run.output %}
         <section class="mb-6">

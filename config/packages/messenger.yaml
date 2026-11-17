@@ -13,6 +13,7 @@ framework:
 
         routing:
             App\Message\RunReflex: async
+            App\Message\ExecuteDecision: async
             Symfony\Component\RemoteEvent\Messenger\ConsumeRemoteEventMessage: async
 
 when@test:

@@ -1,0 +1,26 @@
+framework:
+    workflows:
+        decision:
+            type: state_machine
+            audit_trail:
+                enabled: true
+            marking_store:
+                type: method
+                property: status
+            supports:
+                - App\Entity\Decision
+            initial_marking: proposed
+            places: [proposed, approved, rejected, executed, failed]
+            transitions:
+                approve:
+                    from: proposed
+                    to: approved
+                reject:
+                    from: proposed
+                    to: rejected
+                execute:
+                    from: approved
+                    to: executed
+                fail:
+                    from: approved
+                    to: failed

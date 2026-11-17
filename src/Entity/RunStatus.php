@@ -8,6 +8,8 @@ enum RunStatus: string
 {
     case Queued = 'queued';
     case Running = 'running';
+    /** Paused until a waitpoint resolves, e.g. people decide on its proposals. */
+    case Waiting = 'waiting';
     case Succeeded = 'succeeded';
     case Failed = 'failed';
     /** Not run, e.g. the daily budget was spent. */
@@ -15,6 +17,6 @@ enum RunStatus: string
 
     public function isFinished(): bool
     {
-        return self::Queued !== $this && self::Running !== $this;
+        return \in_array($this, [self::Succeeded, self::Failed, self::Skipped], true);
     }
 }

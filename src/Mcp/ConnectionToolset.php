@@ -22,6 +22,11 @@ final class ConnectionToolset implements ToolsetInterface
     ) {
     }
 
+    public function getConnection(): Connection
+    {
+        return $this->connection;
+    }
+
     public function getName(): string
     {
         return $this->connection->getSlug();

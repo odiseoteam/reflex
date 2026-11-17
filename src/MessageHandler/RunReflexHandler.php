@@ -6,6 +6,7 @@ namespace App\MessageHandler;
 
 use App\Engine\ReflexRunner;
 use App\Entity\Run;
+use App\Entity\RunStatus;
 use App\Message\RunReflex;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -23,8 +24,8 @@ final readonly class RunReflexHandler
     {
         $run = $this->entityManager->find(Run::class, $message->runId);
 
-        // A finished run is never repeated; a running one resumes after a worker crash.
-        if (null === $run || $run->getStatus()->isFinished()) {
+        // Finished and waiting runs are left alone; a running one resumes after a worker crash.
+        if (null === $run || !\in_array($run->getStatus(), [RunStatus::Queued, RunStatus::Running], true)) {
             return;
         }
 

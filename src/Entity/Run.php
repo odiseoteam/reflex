@@ -52,6 +52,14 @@ class Run
     #[ORM\Column(nullable: true)]
     private ?int $tokensUsed = null;
 
+    /** Stretch of the run between waits; part of the steps' idempotency keys. */
+    #[ORM\Column]
+    private int $segment = 1;
+
+    /** @var array<mixed>|null the agent conversation so far, normalized, kept while it waits */
+    #[ORM\Column(type: Types::JSON, nullable: true)]
+    private ?array $conversation = null;
+
     /** @var Collection<int, RunStep> */
     #[ORM\OneToMany(targetEntity: RunStep::class, mappedBy: 'run', cascade: ['persist'])]
     #[ORM\OrderBy(['position' => \SortDirection::Ascending])]
@@ -144,7 +152,44 @@ class Run
 
     public function recordTokens(?int $tokens): void
     {
-        $this->tokensUsed = $tokens;
+        if (null !== $tokens) {
+            $this->tokensUsed = ($this->tokensUsed ?? 0) + $tokens;
+        }
+    }
+
+    public function getSegment(): int
+    {
+        return $this->segment;
+    }
+
+    /**
+     * @return array<mixed>|null
+     */
+    public function getConversation(): ?array
+    {
+        return $this->conversation;
+    }
+
+    /**
+     * Pauses until its waitpoint resolves, keeping the conversation to continue it.
+     *
+     * @param array<mixed> $conversation
+     */
+    public function wait(string $output, array $conversation): void
+    {
+        $this->status = RunStatus::Waiting;
+        $this->output = $output;
+        $this->conversation = $conversation;
+    }
+
+    /**
+     * Queues the next segment after its waitpoint resolved.
+     */
+    public function resume(): void
+    {
+        $this->status = RunStatus::Queued;
+        ++$this->segment;
+        $this->attempts = 0;
     }
 
     /**
@@ -187,6 +232,7 @@ class Run
     {
         $this->status = RunStatus::Succeeded;
         $this->output = $output;
+        $this->conversation = null;
         $this->finishedAt = new \DateTimeImmutable();
     }
 
