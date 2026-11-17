@@ -10,9 +10,11 @@ enum RunStatus: string
     case Running = 'running';
     case Succeeded = 'succeeded';
     case Failed = 'failed';
+    /** Not run, e.g. the daily budget was spent. */
+    case Skipped = 'skipped';
 
     public function isFinished(): bool
     {
-        return self::Succeeded === $this || self::Failed === $this;
+        return self::Queued !== $this && self::Running !== $this;
     }
 }

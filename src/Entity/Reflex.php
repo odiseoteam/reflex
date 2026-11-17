@@ -21,6 +21,10 @@ class Reflex
 {
     public const string DEFAULT_MODEL = 'claude-sonnet-5-5';
     public const string ANY_EVENT = '*';
+    public const int DEFAULT_MAX_TOOL_CALLS = 10;
+    public const int DEFAULT_TIME_LIMIT = 120;
+    /** Consecutive failed runs that disable a reflex. */
+    public const int FAILURE_THRESHOLD = 3;
 
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
@@ -32,12 +36,28 @@ class Reflex
     /** @var Collection<int, Connection> */
     #[ORM\ManyToMany(targetEntity: Connection::class)]
     #[ORM\JoinTable(name: 'reflex_connection')]
-    #[ORM\OrderBy(['name' => 'ASC'])]
+    #[ORM\OrderBy(['name' => \SortDirection::Ascending])]
     private Collection $connections;
 
     /** @var array<string, string> tool name => ToolPolicy value */
     #[ORM\Column(type: Types::JSON, options: ['jsonb' => true])]
     private array $toolPolicies = [];
+
+    /** Tokens it may spend per UTC day; null for no limit. */
+    #[ORM\Column(nullable: true)]
+    private ?int $dailyTokenBudget = null;
+
+    #[ORM\Column]
+    private int $maxToolCalls = self::DEFAULT_MAX_TOOL_CALLS;
+
+    #[ORM\Column]
+    private int $timeLimitSeconds = self::DEFAULT_TIME_LIMIT;
+
+    #[ORM\Column]
+    private int $consecutiveFailures = 0;
+
+    #[ORM\Column(type: Types::TEXT, nullable: true)]
+    private ?string $disabledReason = null;
 
     #[ORM\Column]
     private \DateTimeImmutable $createdAt;
@@ -118,6 +138,58 @@ class Reflex
         return $this->updatedAt;
     }
 
+    public function getDailyTokenBudget(): ?int
+    {
+        return $this->dailyTokenBudget;
+    }
+
+    public function getMaxToolCalls(): int
+    {
+        return $this->maxToolCalls;
+    }
+
+    public function getTimeLimitSeconds(): int
+    {
+        return $this->timeLimitSeconds;
+    }
+
+    public function getConsecutiveFailures(): int
+    {
+        return $this->consecutiveFailures;
+    }
+
+    public function getDisabledReason(): ?string
+    {
+        return $this->disabledReason;
+    }
+
+    public function setLimits(?int $dailyTokenBudget, int $maxToolCalls, int $timeLimitSeconds): void
+    {
+        $this->dailyTokenBudget = $dailyTokenBudget;
+        $this->maxToolCalls = $maxToolCalls;
+        $this->timeLimitSeconds = $timeLimitSeconds;
+    }
+
+    public function recordSuccess(): void
+    {
+        $this->consecutiveFailures = 0;
+    }
+
+    /**
+     * @return bool whether this failure disabled the reflex
+     */
+    public function recordFailure(): bool
+    {
+        if (++$this->consecutiveFailures < self::FAILURE_THRESHOLD || !$this->enabled) {
+            return false;
+        }
+
+        $this->enabled = false;
+        $this->disabledReason = \sprintf('Disabled after %d failed runs in a row.', $this->consecutiveFailures);
+
+        return true;
+    }
+
     /**
      * @param iterable<Connection> $connections
      */
@@ -128,6 +200,10 @@ class Reflex
         $this->triggerEvent = $triggerEvent;
         $this->instructions = $instructions;
         $this->model = $model;
+        if ($enabled && !$this->enabled) {
+            $this->consecutiveFailures = 0;
+            $this->disabledReason = null;
+        }
         $this->enabled = $enabled;
         $this->connections->clear();
         foreach ($connections as $connection) {

@@ -6,7 +6,6 @@ namespace App\MessageHandler;
 
 use App\Engine\ReflexRunner;
 use App\Entity\Run;
-use App\Entity\RunStatus;
 use App\Message\RunReflex;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Messenger\Attribute\AsMessageHandler;
@@ -24,8 +23,8 @@ final readonly class RunReflexHandler
     {
         $run = $this->entityManager->find(Run::class, $message->runId);
 
-        // A redelivered message must not run a reflex twice.
-        if (null === $run || RunStatus::Queued !== $run->getStatus()) {
+        // A finished run is never repeated; a running one resumes after a worker crash.
+        if (null === $run || $run->getStatus()->isFinished()) {
             return;
         }
 

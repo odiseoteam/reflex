@@ -19,6 +19,8 @@
             · created {{ run.createdAt|date('Y-m-d H:i:s') }}
             {% if run.finishedAt %}· finished {{ run.finishedAt|date('H:i:s') }}{% endif %}
             · {{ run.reflexSnapshot.model }}
+            {% if run.tokensUsed is not null %}· {{ run.tokensUsed|number_format }} tokens{% endif %}
+            {% if run.attempts > 1 %}· resumed {{ run.attempts - 1 }}×{% endif %}
         </p>
     </div>
 

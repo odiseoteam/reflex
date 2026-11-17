@@ -19,6 +19,23 @@ class RunRepository extends ServiceEntityRepository
     }
 
     /**
+     * Tokens the reflex spent since midnight UTC.
+     */
+    public function tokensUsedToday(\App\Entity\Reflex $reflex): int
+    {
+        $total = $this->createQueryBuilder('r')
+            ->select('COALESCE(SUM(r.tokensUsed), 0)')
+            ->where('r.reflex = :reflex')
+            ->andWhere('r.createdAt >= :since')
+            ->setParameter('reflex', $reflex)
+            ->setParameter('since', new \DateTimeImmutable('today', new \DateTimeZone('UTC')))
+            ->getQuery()
+            ->getSingleScalarResult();
+
+        return is_numeric($total) ? (int) $total : 0;
+    }
+
+    /**
      * @return list<Run>
      */
     public function findLatest(?\App\Entity\Reflex $reflex = null, int $limit = 50): array

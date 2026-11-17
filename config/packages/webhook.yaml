@@ -4,3 +4,9 @@ framework:
             generic:
                 service: App\Webhook\GenericRequestParser
                 secret: '%env(REFLEX_WEBHOOK_SECRET)%'
+            github:
+                service: App\Webhook\GitHubRequestParser
+                secret: '%env(GITHUB_WEBHOOK_SECRET)%'
+            stripe:
+                service: App\Webhook\StripeRequestParser
+                secret: '%env(STRIPE_WEBHOOK_SECRET)%'

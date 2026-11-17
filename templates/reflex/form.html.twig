@@ -16,6 +16,11 @@
         {{ form_row(form.instructions) }}
         {{ form_row(form.model) }}
         {{ form_row(form.connections) }}
+        <div class="grid gap-4 sm:grid-cols-3">
+            {{ form_row(form.dailyTokenBudget) }}
+            {{ form_row(form.maxToolCalls) }}
+            {{ form_row(form.timeLimitSeconds) }}
+        </div>
         {{ form_row(form.enabled) }}
 
         <div class="flex items-center gap-3">

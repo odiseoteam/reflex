@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Engine;
 
 use App\Engine\PolicyToolbox;
+use App\Engine\RunLimitExceededException;
 use App\Entity\Reflex;
 use App\Entity\Run;
 use App\Entity\RunStepKind;
@@ -96,6 +97,46 @@ final class PolicyToolboxTest extends KernelTestCase
         $step = $this->run->getSteps()->first();
         self::assertInstanceOf(\App\Entity\RunStep::class, $step);
         self::assertSame(RunStepKind::Proposal, $step->getKind());
+    }
+
+    public function testAResumedRunReusesCompletedCalls(): void
+    {
+        $first = $this->toolbox()->execute(new ToolCall('1', 'tracker_list_issues', ['state' => 'open', 'page' => 1]));
+
+        // Same call after a crash, arguments in another order.
+        $again = $this->toolbox()->execute(new ToolCall('1b', 'tracker_list_issues', ['page' => 1, 'state' => 'open']));
+
+        self::assertSame(['tracker_list_issues'], $this->tracker->executed);
+        self::assertSame(json_encode($first->getResult(), \JSON_PRETTY_PRINT), $again->getResult());
+        self::assertCount(1, $this->run->getSteps());
+    }
+
+    public function testAnInterruptedCallRunsAgainOnlyWhenSafeToRepeat(): void
+    {
+        $this->run->getReflex()->setToolPolicies(['tracker_close_issue' => ToolPolicy::Auto]);
+        // A worker crashed while both calls were in flight.
+        $this->run->addStep(PolicyToolbox::idempotencyKeyFor($this->run, 1, 'tracker_list_issues', []), RunStepKind::ToolCall, 'tracker_list_issues', []);
+        $this->run->addStep(PolicyToolbox::idempotencyKeyFor($this->run, 2, 'tracker_close_issue', ['id' => 7]), RunStepKind::ToolCall, 'tracker_close_issue', ['id' => 7]);
+        $this->entityManager->flush();
+
+        $toolbox = $this->toolbox();
+        $toolbox->execute(new ToolCall('1', 'tracker_list_issues'));
+        $closed = $toolbox->execute(new ToolCall('2', 'tracker_close_issue', ['id' => 7]));
+
+        self::assertSame(['tracker_list_issues'], $this->tracker->executed);
+        self::assertIsString($closed->getResult());
+        self::assertStringContainsString('outcome is unknown', $closed->getResult());
+        [$list, $close] = $this->run->getSteps()->toArray();
+        self::assertTrue($list->isCompleted());
+        self::assertSame(RunStepKind::Error, $close->getKind());
+    }
+
+    public function testStopsAtTheDeadline(): void
+    {
+        $toolbox = new PolicyToolbox($this->run, [$this->tracker], $this->entityManager, new \DateTimeImmutable('-1 second'));
+
+        $this->expectException(RunLimitExceededException::class);
+        $toolbox->execute(new ToolCall('1', 'tracker_list_issues'));
     }
 
     private function toolbox(): PolicyToolbox

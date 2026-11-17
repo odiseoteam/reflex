@@ -45,9 +45,16 @@ class Run
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $finishedAt = null;
 
+    /** How many times a worker started it; above one means it resumed after a crash. */
+    #[ORM\Column]
+    private int $attempts = 0;
+
+    #[ORM\Column(nullable: true)]
+    private ?int $tokensUsed = null;
+
     /** @var Collection<int, RunStep> */
     #[ORM\OneToMany(targetEntity: RunStep::class, mappedBy: 'run', cascade: ['persist'])]
-    #[ORM\OrderBy(['position' => 'ASC'])]
+    #[ORM\OrderBy(['position' => \SortDirection::Ascending])]
     private Collection $steps;
 
     public function __construct(
@@ -125,21 +132,55 @@ class Run
         return $this->steps;
     }
 
+    public function getAttempts(): int
+    {
+        return $this->attempts;
+    }
+
+    public function getTokensUsed(): ?int
+    {
+        return $this->tokensUsed;
+    }
+
+    public function recordTokens(?int $tokens): void
+    {
+        $this->tokensUsed = $tokens;
+    }
+
     /**
      * @param array<string, mixed> $arguments
      */
-    public function addStep(RunStepKind $kind, string $toolName, array $arguments, ?string $result = null): RunStep
+    public function addStep(string $idempotencyKey, RunStepKind $kind, string $toolName, array $arguments, ?string $result = null): RunStep
     {
-        $step = new RunStep($this, $this->steps->count() + 1, $kind, $toolName, $arguments, $result);
+        $step = new RunStep($this, $this->steps->count() + 1, $idempotencyKey, $kind, $toolName, $arguments, $result);
         $this->steps->add($step);
 
         return $step;
     }
 
+    public function findStep(string $idempotencyKey): ?RunStep
+    {
+        foreach ($this->steps as $step) {
+            if ($step->getIdempotencyKey() === $idempotencyKey) {
+                return $step;
+            }
+        }
+
+        return null;
+    }
+
     public function start(): void
     {
         $this->status = RunStatus::Running;
-        $this->startedAt = new \DateTimeImmutable();
+        $this->startedAt ??= new \DateTimeImmutable();
+        ++$this->attempts;
+    }
+
+    public function skip(string $reason): void
+    {
+        $this->status = RunStatus::Skipped;
+        $this->error = $reason;
+        $this->finishedAt = new \DateTimeImmutable();
     }
 
     public function succeed(string $output): void

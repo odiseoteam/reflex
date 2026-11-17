@@ -68,6 +68,7 @@ final class ReflexController extends AbstractController
             'tools' => $this->catalog($reflex),
             'policies' => ToolPolicy::cases(),
             'runs' => $this->runs->findLatest($reflex),
+            'tokensToday' => $this->runs->tokensUsedToday($reflex),
         ]);
     }
 

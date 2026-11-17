@@ -11,7 +11,7 @@ use Symfony\Component\Validator\Constraints as Assert;
 final class ReflexInput
 {
     public const array MODELS = ['claude-sonnet-5-5', 'claude-opus-5-5', 'claude-haiku-5-5'];
-    public const array SOURCES = ['generic'];
+    public const array SOURCES = ['generic', 'github', 'stripe'];
 
     #[Assert\NotBlank]
     #[Assert\Length(max: 100)]
@@ -33,6 +33,15 @@ final class ReflexInput
 
     public bool $enabled = true;
 
+    #[Assert\Positive]
+    public ?int $dailyTokenBudget = null;
+
+    #[Assert\Range(min: 1, max: 50)]
+    public int $maxToolCalls = Reflex::DEFAULT_MAX_TOOL_CALLS;
+
+    #[Assert\Range(min: 10, max: 900)]
+    public int $timeLimitSeconds = Reflex::DEFAULT_TIME_LIMIT;
+
     /** @var list<Connection> */
     public array $connections = [];
 
@@ -45,6 +54,9 @@ final class ReflexInput
         $input->instructions = $reflex->getInstructions();
         $input->model = $reflex->getModel();
         $input->enabled = $reflex->isEnabled();
+        $input->dailyTokenBudget = $reflex->getDailyTokenBudget();
+        $input->maxToolCalls = $reflex->getMaxToolCalls();
+        $input->timeLimitSeconds = $reflex->getTimeLimitSeconds();
         $input->connections = array_values($reflex->getConnections()->toArray());
 
         return $input;
@@ -53,5 +65,6 @@ final class ReflexInput
     public function applyTo(Reflex $reflex): void
     {
         $reflex->update($this->name, $this->triggerSource, $this->triggerEvent, $this->instructions, $this->model, $this->enabled, $this->connections);
+        $reflex->setLimits($this->dailyTokenBudget, $this->maxToolCalls, $this->timeLimitSeconds);
     }
 }
