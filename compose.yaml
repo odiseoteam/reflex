@@ -16,7 +16,7 @@ services:
   worker:
     image: ${IMAGES_PREFIX:-}reflex-php
     restart: unless-stopped
-    command: ['php', 'bin/console', 'messenger:consume', 'async', '--time-limit=3600', '-vv']
+    command: ['php', 'bin/console', 'messenger:consume', 'async', 'scheduler_default', '--time-limit=3600', '-vv']
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-!ChangeMe!}@database:5432/${POSTGRES_DB:-app}?serverVersion=${POSTGRES_VERSION:-18}&charset=${POSTGRES_CHARSET:-utf8}
     healthcheck:

@@ -45,4 +45,21 @@ class ReflexRepository extends ServiceEntityRepository
 
         return $reflexes;
     }
+
+    /**
+     * @return list<Reflex>
+     */
+    public function findScheduled(): array
+    {
+        /** @var list<Reflex> $reflexes */
+        $reflexes = $this->createQueryBuilder('r')
+            ->where('r.enabled = true')
+            ->andWhere('r.triggerSource = :source')
+            ->andWhere('r.cron IS NOT NULL')
+            ->setParameter('source', Reflex::SCHEDULE_SOURCE)
+            ->getQuery()
+            ->getResult();
+
+        return $reflexes;
+    }
 }

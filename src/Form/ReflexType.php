@@ -25,13 +25,19 @@ final class ReflexType extends AbstractType
         $builder
             ->add('name', TextType::class)
             ->add('triggerSource', ChoiceType::class, [
-                'label' => 'Webhook source',
+                'label' => 'Trigger',
                 'choices' => array_combine(ReflexInput::SOURCES, ReflexInput::SOURCES),
-                'help' => 'Events arrive at POST /webhook/{source}.',
+                'help' => 'A webhook source, whose events arrive at POST /webhook/{source}, or "schedule".',
             ])
             ->add('triggerEvent', TextType::class, [
                 'label' => 'Event type',
-                'help' => 'E.g. "issue.opened", or "*" for any event of the source.',
+                'help' => 'For webhooks: e.g. "issue.opened", or "*" for any event of the source.',
+            ])
+            ->add('cron', TextType::class, [
+                'label' => 'Schedule (cron, UTC)',
+                'required' => false,
+                'attr' => ['placeholder' => '0 9 * * 1'],
+                'help' => 'For "schedule": when it runs, e.g. "0 9 * * 1" for Mondays at 09:00 UTC.',
             ])
             ->add('instructions', TextareaType::class, [
                 'attr' => ['rows' => 8, 'placeholder' => 'Classify new issues, look for duplicates and comment when you find one.'],

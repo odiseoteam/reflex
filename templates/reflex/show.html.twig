@@ -7,7 +7,7 @@
         <div>
             <h1 class="text-2xl font-semibold">{{ reflex.name }}</h1>
             <p class="text-sm text-slate-600">
-                On <code>{{ reflex.triggerSource }}</code> · <code>{{ reflex.triggerEvent }}</code> · {{ reflex.model }} ·
+                {% if reflex.scheduled %}On schedule <code>{{ reflex.cron }}</code> UTC · next {{ reflex.nextRunAt(date())|date('Y-m-d H:i', 'UTC') }}{% else %}On <code>{{ reflex.triggerSource }}</code> · <code>{{ reflex.triggerEvent }}</code>{% endif %} · {{ reflex.model }} ·
                 <span class="{{ reflex.enabled ? 'text-emerald-700' : 'text-slate-500' }}">{{ reflex.enabled ? 'Enabled' : 'Disabled' }}</span>
             </p>
         </div>

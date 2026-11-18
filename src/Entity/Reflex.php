@@ -21,6 +21,8 @@ class Reflex
 {
     public const string DEFAULT_MODEL = 'claude-sonnet-5-5';
     public const string ANY_EVENT = '*';
+    /** Trigger source of reflexes that run on a cron schedule. */
+    public const string SCHEDULE_SOURCE = 'schedule';
     public const int DEFAULT_MAX_TOOL_CALLS = 10;
     public const int DEFAULT_TIME_LIMIT = 120;
     /** Consecutive failed runs that disable a reflex. */
@@ -43,6 +45,14 @@ class Reflex
     /** @var array<string, string> tool name => ToolPolicy value */
     #[ORM\Column(type: Types::JSON, options: ['jsonb' => true])]
     private array $toolPolicies = [];
+
+    /** Cron expression in UTC, for scheduled reflexes. */
+    #[ORM\Column(length: 100, nullable: true)]
+    private ?string $cron = null;
+
+    /** Slot the schedule last fired for. */
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $lastFiredAt = null;
 
     /** @var array<string, int> tool name => approvals it needs, when more than one */
     #[ORM\Column(type: Types::JSON, options: ['jsonb' => true])]
@@ -141,6 +151,55 @@ class Reflex
     public function getUpdatedAt(): \DateTimeImmutable
     {
         return $this->updatedAt;
+    }
+
+    public function isScheduled(): bool
+    {
+        return self::SCHEDULE_SOURCE === $this->triggerSource && null !== $this->cron;
+    }
+
+    public function getCron(): ?string
+    {
+        return $this->cron;
+    }
+
+    public function setCron(?string $cron): void
+    {
+        if ($cron !== $this->cron) {
+            $this->cron = $cron;
+            $this->lastFiredAt = null;
+        }
+    }
+
+    public function getLastFiredAt(): ?\DateTimeImmutable
+    {
+        return $this->lastFiredAt;
+    }
+
+    /**
+     * The latest slot due at $now, once: null if it already fired or the reflex
+     * was created after it. Missed slots collapse into the latest one.
+     */
+    public function claimDueSlot(\DateTimeImmutable $now): ?\DateTimeImmutable
+    {
+        if (!$this->isScheduled() || !$this->enabled) {
+            return null;
+        }
+
+        $slot = \DateTimeImmutable::createFromInterface((new \Cron\CronExpression((string) $this->cron))->getPreviousRunDate($now, 0, true, 'UTC'));
+        $since = $this->lastFiredAt ?? $this->createdAt;
+        if ($slot <= $since) {
+            return null;
+        }
+
+        $this->lastFiredAt = $slot;
+
+        return $slot;
+    }
+
+    public function nextRunAt(\DateTimeInterface $now): ?\DateTimeImmutable
+    {
+        return $this->isScheduled() ? \DateTimeImmutable::createFromInterface((new \Cron\CronExpression((string) $this->cron))->getNextRunDate($now, 0, false, 'UTC')) : null;
     }
 
     public function getDailyTokenBudget(): ?int
