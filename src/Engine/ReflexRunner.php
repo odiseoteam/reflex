@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Engine;
 
 use App\Entity\Decision;
+use App\Entity\DecisionKind;
 use App\Entity\IncomingEvent;
 use App\Entity\Run;
 use App\Repository\DecisionRepository;
@@ -135,7 +136,7 @@ final readonly class ReflexRunner
         }
 
         return $messages->with(Message::ofUser(
-            "People decided on your proposals:\n\n".implode("\n\n", $outcomes)
+            "People decided on your proposals and the servers' questions:\n\n".implode("\n\n", $outcomes)
             ."\n\nContinue with whatever depends on these decisions, then summarise.",
         ));
     }
@@ -144,11 +145,17 @@ final readonly class ReflexRunner
     {
         $call = \sprintf('%s %s', $decision->getToolName(), json_encode($decision->getArguments(), \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR));
 
-        return match ($decision->getStatus()) {
-            Decision::EXECUTED => \sprintf("<decision status=\"executed\">\n%s\n%s\n</decision>", $call, json_encode($decision->getResult(), \JSON_THROW_ON_ERROR)),
-            Decision::FAILED => \sprintf("<decision status=\"failed\">\n%s\n%s\n</decision>", $call, json_encode($decision->getResult(), \JSON_THROW_ON_ERROR)),
-            default => \sprintf("<decision status=\"rejected\">\n%s\nNote: %s\n</decision>", $call, json_encode($decision->getNote() ?? '', \JSON_THROW_ON_ERROR)),
+        $kind = $decision->getKind()->value;
+        $status = match ($decision->getStatus()) {
+            Decision::EXECUTED => 'executed',
+            Decision::FAILED => 'failed',
+            default => DecisionKind::Question === $decision->getKind() ? 'declined' : 'rejected',
         };
+        $detail = \in_array($status, ['executed', 'failed'], true)
+            ? json_encode($decision->getResult(), \JSON_THROW_ON_ERROR)
+            : 'Note: '.json_encode($decision->getNote() ?? '', \JSON_THROW_ON_ERROR);
+
+        return \sprintf("<decision kind=\"%s\" status=\"%s\">\n%s\n%s\n</decision>", $kind, $status, $call, $detail);
     }
 
     private function finish(Run $run, ?string $output, ?string $error = null): void

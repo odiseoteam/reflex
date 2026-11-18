@@ -33,7 +33,7 @@ final class ConnectionToolboxProvider implements ToolboxProviderInterface
         foreach ($run->getReflex()->getConnections() as $connection) {
             if (ConnectionStatus::Connected === $connection->getStatus()) {
                 $this->toolsets[] = $toolset = new ConnectionToolset($connection, $this->clientFactory);
-                $toolboxes[] = new ConnectedToolbox(new McpToolbox($toolset, logger: $this->logger), $connection);
+                $toolboxes[] = new ConnectedToolbox(new McpToolbox($toolset, logger: $this->logger), $connection, $toolset->getQuestions());
             }
         }
 

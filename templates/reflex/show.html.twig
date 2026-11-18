@@ -11,6 +11,7 @@
                 <span class="{{ reflex.enabled ? 'text-emerald-700' : 'text-slate-500' }}">{{ reflex.enabled ? 'Enabled' : 'Disabled' }}</span>
             </p>
         </div>
+        {% if is_granted('ROLE_ADMIN') %}
         <div class="flex items-center gap-2">
             <form method="post" action="{{ path('app_reflex_run', {id: reflex.id}) }}">
                 <input type="hidden" name="_token" value="{{ csrf_token('run-' ~ reflex.id) }}">
@@ -18,6 +19,7 @@
             </form>
             <a href="{{ path('app_reflex_edit', {id: reflex.id}) }}" class="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Edit</a>
         </div>
+        {% endif %}
     </div>
 
     {% if reflex.disabledReason %}
@@ -45,7 +47,7 @@
                 <input type="hidden" name="_token" value="{{ csrf_token('policy-' ~ reflex.id) }}">
                 <table class="w-full text-sm">
                     <thead class="bg-slate-50 text-left text-xs uppercase text-slate-500">
-                        <tr><th class="px-4 py-2">Tool</th><th class="px-4 py-2">Policy</th></tr>
+                        <tr><th class="px-4 py-2">Tool</th><th class="px-4 py-2">Policy</th><th class="px-4 py-2" title="Admins who must approve before it runs">Approvals</th></tr>
                     </thead>
                     <tbody class="divide-y divide-slate-200">
                         {% for tool in tools %}
@@ -57,19 +59,25 @@
                                     <div class="text-xs text-slate-500">{{ tool.connection }} · {{ tool.description|length > 120 ? tool.description|slice(0, 120) ~ '…' : tool.description }}</div>
                                 </td>
                                 <td class="px-4 py-2">
-                                    <select name="policies[{{ tool.name }}]" class="rounded-md border border-slate-300 px-2 py-1 text-sm">
+                                    <select name="policies[{{ tool.name }}]" class="rounded-md border border-slate-300 px-2 py-1 text-sm" {{ is_granted('ROLE_ADMIN') ? '' : 'disabled' }}>
                                         {% for policy in policies %}
                                             <option value="{{ policy.value }}" {{ policy == tool.policy ? 'selected' }}>{{ policy.label }}{{ policy == tool.policy and not tool.configured ? ' (default)' }}</option>
                                         {% endfor %}
                                     </select>
                                 </td>
+                                <td class="px-4 py-2">
+                                    <input type="number" name="approvals[{{ tool.name }}]" value="{{ tool.approvals }}" min="1" max="{{ constant('App\\Entity\\Reflex::MAX_APPROVALS') }}"
+                                           class="w-16 rounded-md border border-slate-300 px-2 py-1 text-sm" {{ is_granted('ROLE_ADMIN') ? '' : 'disabled' }}>
+                                </td>
                             </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+                {% if is_granted('ROLE_ADMIN') %}
                 <div class="border-t border-slate-200 bg-slate-50 px-4 py-3">
                     <button class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">Save policy</button>
                 </div>
+                {% endif %}
             </form>
         {% endif %}
     </section>

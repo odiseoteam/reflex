@@ -7,6 +7,7 @@ namespace App\Controller;
 use App\Entity\Reflex;
 use App\Entity\Run;
 use App\Entity\ToolPolicy;
+use App\Entity\User;
 use App\Form\ReflexInput;
 use App\Form\ReflexType;
 use App\Message\RunReflex;
@@ -21,6 +22,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 #[Route('/reflexes')]
 final class ReflexController extends AbstractController
@@ -44,6 +46,7 @@ final class ReflexController extends AbstractController
     }
 
     #[Route('/new', name: 'app_reflex_new', methods: ['GET', 'POST'])]
+    #[IsGranted(User::ROLE_ADMIN)]
     public function new(Request $request): Response
     {
         $input = new ReflexInput();
@@ -75,6 +78,7 @@ final class ReflexController extends AbstractController
     }
 
     #[Route('/{id}/edit', name: 'app_reflex_edit', requirements: ['id' => Requirement::UUID], methods: ['GET', 'POST'])]
+    #[IsGranted(User::ROLE_ADMIN)]
     public function edit(Request $request, Reflex $reflex): Response
     {
         $input = ReflexInput::fromReflex($reflex);
@@ -92,21 +96,28 @@ final class ReflexController extends AbstractController
     }
 
     #[Route('/{id}/policy', name: 'app_reflex_policy', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
+    #[IsGranted(User::ROLE_ADMIN)]
     public function policy(Request $request, Reflex $reflex): RedirectResponse
     {
         $this->denyUnlessCsrfValid($request, 'policy-'.$reflex->getId());
 
         $submitted = $request->getPayload()->all('policies');
+        $submittedApprovals = $request->getPayload()->all('approvals');
         $policies = [];
+        $approvals = [];
         foreach ($this->catalog($reflex) as $tool) {
             $value = $submitted[$tool['name']] ?? null;
             $policy = \is_string($value) ? ToolPolicy::tryFrom($value) : null;
             if (null !== $policy) {
                 $policies[$tool['name']] = $policy;
             }
+            $count = filter_var($submittedApprovals[$tool['name']] ?? null, \FILTER_VALIDATE_INT, ['options' => ['min_range' => 1, 'max_range' => Reflex::MAX_APPROVALS]]);
+            if (\is_int($count)) {
+                $approvals[$tool['name']] = $count;
+            }
         }
 
-        $reflex->setToolPolicies($policies);
+        $reflex->setToolPolicies($policies, $approvals);
         $this->entityManager->flush();
         $this->addFlash('success', 'Policy saved.');
 
@@ -114,6 +125,7 @@ final class ReflexController extends AbstractController
     }
 
     #[Route('/{id}/run', name: 'app_reflex_run', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
+    #[IsGranted(User::ROLE_ADMIN)]
     public function run(Request $request, Reflex $reflex): RedirectResponse
     {
         $this->denyUnlessCsrfValid($request, 'run-'.$reflex->getId());
@@ -135,7 +147,7 @@ final class ReflexController extends AbstractController
     /**
      * Tools of the reflex's connections, as the agent names them, with their effective policy.
      *
-     * @return list<array{name: string, description: string, connection: string, annotations: array<string, mixed>, policy: ToolPolicy, configured: bool}>
+     * @return list<array{name: string, description: string, connection: string, annotations: array<string, mixed>, policy: ToolPolicy, approvals: int, configured: bool}>
      */
     private function catalog(Reflex $reflex): array
     {
@@ -152,6 +164,7 @@ final class ReflexController extends AbstractController
                     'connection' => $connection->getName(),
                     'annotations' => $annotations,
                     'policy' => $reflex->policyFor($name, $annotations),
+                    'approvals' => $reflex->approvalsFor($name),
                     'configured' => isset($configured[$name]),
                 ];
             }

@@ -7,7 +7,10 @@ namespace App\Engine;
 use App\Entity\ConnectionStatus;
 use App\Entity\Decision;
 use App\Entity\ToolPolicy;
+use App\Entity\User;
+use App\Entity\Vote;
 use App\Entity\Waitpoint;
+use App\Mcp\Elicitation\QuestionBox;
 use App\Mcp\McpClientFactory;
 use App\Message\ExecuteDecision;
 use App\Message\RunReflex;
@@ -22,8 +25,9 @@ use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Workflow\WorkflowInterface;
 
 /**
- * Where people decide on proposals. An approved decision runs exactly as proposed,
- * without asking the model again; once a waitpoint has no open decision, its run resumes.
+ * Where people decide on proposals and answer servers' questions. An approved decision
+ * runs exactly as proposed, without asking the model again; once a waitpoint has no open
+ * decision, its run resumes.
  */
 final readonly class DecisionDesk
 {
@@ -38,20 +42,80 @@ final readonly class DecisionDesk
     ) {
     }
 
-    public function approve(Decision $decision, ?string $note = null): void
+    /**
+     * Records the person's approval; the decision runs once it has the approvals it needs.
+     *
+     * @return bool whether this approval was the last one needed
+     *
+     * @throws DecisionClosedException
+     */
+    public function approve(Decision $decision, User $user, ?string $note = null): bool
     {
-        $decision->setNote($note);
-        $this->workflow->apply($decision, 'approve');
-        $this->entityManager->flush();
+        $approved = $this->whileOpen($decision, 'approve', $user, function () use ($decision, $user, $note): bool {
+            $this->vote($decision, $user, true, $note);
+            if ($decision->countApprovals() < $decision->getRequiredApprovals()) {
+                return false;
+            }
+
+            $decision->setNote($note);
+            $this->workflow->apply($decision, 'approve');
+
+            return true;
+        });
+
+        if ($approved) {
+            $this->bus->dispatch(new ExecuteDecision($decision->getId()->toRfc4122()));
+        }
+
+        return $approved;
+    }
+
+    /**
+     * One rejection is enough.
+     *
+     * @throws DecisionClosedException
+     */
+    public function reject(Decision $decision, User $user, ?string $note = null): void
+    {
+        $this->whileOpen($decision, 'reject', $user, function () use ($decision, $user, $note): void {
+            $this->vote($decision, $user, false, $note);
+            $decision->setNote($note);
+            $this->workflow->apply($decision, 'reject');
+        });
+
+        $this->resolveIfDone($decision->getWaitpoint());
+    }
+
+    /**
+     * Fills in what the server asked for; the call is repeated with it.
+     *
+     * @param array<string, mixed> $content
+     *
+     * @throws DecisionClosedException
+     */
+    public function answer(Decision $decision, User $user, array $content): void
+    {
+        $this->whileOpen($decision, 'answer', null, function () use ($decision, $user, $content): void {
+            $decision->answer($content);
+            $decision->setRespondent($user);
+            $this->workflow->apply($decision, 'answer');
+        });
 
         $this->bus->dispatch(new ExecuteDecision($decision->getId()->toRfc4122()));
     }
 
-    public function reject(Decision $decision, ?string $note = null): void
+    /**
+     * Refuses to answer; the call is not repeated and the agent is told.
+     *
+     * @throws DecisionClosedException
+     */
+    public function decline(Decision $decision, User $user, ?string $note = null): void
     {
-        $decision->setNote($note);
-        $this->workflow->apply($decision, 'reject');
-        $this->entityManager->flush();
+        $this->whileOpen($decision, 'reject', null, function () use ($decision, $user, $note): void {
+            $decision->setRespondent($user);
+            $decision->setNote($note);
+            $this->workflow->apply($decision, 'reject');
+        });
 
         $this->resolveIfDone($decision->getWaitpoint());
     }
@@ -88,21 +152,80 @@ final readonly class DecisionDesk
             return;
         }
 
+        $questions = new QuestionBox($decision->getAnswers());
+        $result = null;
+        $failure = null;
         try {
-            $client = $this->clientFactory->connect($connection);
+            $client = $this->clientFactory->connect($connection, $questions);
             try {
                 $result = $client->callTool($decision->getRemoteToolName(), $decision->getArguments());
             } finally {
                 $client->disconnect();
             }
         } catch (\Throwable $e) {
-            $this->logger->error('Decision {decision} failed.', ['decision' => $decision->getId()->toRfc4122(), 'exception' => $e]);
-            $this->conclude($decision, 'fail', $e->getMessage());
+            $failure = $e;
+        }
+
+        // The server cancelled the call to ask something new: wait for a person again.
+        $question = $questions->takeAsked();
+        if (null !== $question) {
+            $decision->ask($question);
+            $this->workflow->apply($decision, 'ask');
+            $this->entityManager->flush();
+
+            return;
+        }
+
+        if (null === $result) {
+            $this->logger->error('Decision {decision} failed.', ['decision' => $decision->getId()->toRfc4122(), 'exception' => $failure]);
+            $this->conclude($decision, 'fail', $failure->getMessage());
 
             return;
         }
 
         $this->conclude($decision, $result->isError ? 'fail' : 'execute', self::describe($result));
+    }
+
+    /**
+     * Applies the change with the decision locked, if it is still open to this person.
+     *
+     * @template T
+     *
+     * @param \Closure(): T $change
+     *
+     * @return T
+     *
+     * @throws DecisionClosedException
+     */
+    private function whileOpen(Decision $decision, string $transition, ?User $voter, \Closure $change): mixed
+    {
+        // Returned, not thrown: an exception inside the transaction would close the entity manager.
+        $outcome = $this->entityManager->wrapInTransaction(function () use ($decision, $transition, $voter, $change): mixed {
+            $this->entityManager->lock($decision, LockMode::PESSIMISTIC_WRITE);
+            $this->entityManager->refresh($decision);
+
+            if (!$this->workflow->can($decision, $transition)) {
+                return new DecisionClosedException('Someone already decided on it.');
+            }
+            if (null !== $voter && $decision->hasVoted($voter)) {
+                return new DecisionClosedException('You already voted on it.');
+            }
+
+            return $change();
+        });
+
+        if ($outcome instanceof DecisionClosedException) {
+            throw $outcome;
+        }
+
+        return $outcome;
+    }
+
+    private function vote(Decision $decision, User $user, bool $approve, ?string $note): void
+    {
+        $vote = new Vote($decision, $user, $approve, $note);
+        $this->entityManager->persist($vote);
+        $decision->addVote($vote);
     }
 
     private function conclude(Decision $decision, string $transition, string $result): void

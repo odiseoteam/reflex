@@ -6,6 +6,7 @@ namespace App\Controller;
 
 use App\Entity\Connection;
 use App\Entity\ConnectionAuth;
+use App\Entity\User;
 use App\Form\ConnectionInput;
 use App\Form\ConnectionType;
 use App\Mcp\ConnectionSynchronizer;
@@ -22,6 +23,7 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Routing\Requirement\Requirement;
+use Symfony\Component\Security\Http\Attribute\IsGranted;
 
 final class ConnectionController extends AbstractController
 {
@@ -52,6 +54,7 @@ final class ConnectionController extends AbstractController
     }
 
     #[Route('/connections/new', name: 'app_connection_new', methods: ['GET', 'POST'])]
+    #[IsGranted(User::ROLE_ADMIN)]
     public function new(Request $request): Response
     {
         $input = new ConnectionInput();
@@ -80,6 +83,7 @@ final class ConnectionController extends AbstractController
     }
 
     #[Route('/connections/{id}/sync', name: 'app_connection_sync', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
+    #[IsGranted(User::ROLE_ADMIN)]
     public function sync(Request $request, Connection $connection): Response
     {
         $this->denyUnlessCsrfValid($request, 'sync-'.$connection->getId());
@@ -88,6 +92,7 @@ final class ConnectionController extends AbstractController
     }
 
     #[Route('/connections/{id}/delete', name: 'app_connection_delete', requirements: ['id' => Requirement::UUID], methods: ['POST'])]
+    #[IsGranted(User::ROLE_ADMIN)]
     public function delete(Request $request, Connection $connection): RedirectResponse
     {
         $this->denyUnlessCsrfValid($request, 'delete-'.$connection->getId());
@@ -100,6 +105,7 @@ final class ConnectionController extends AbstractController
     }
 
     #[Route('/connections/oauth/callback', name: 'app_connection_oauth_callback', methods: ['GET'])]
+    #[IsGranted(User::ROLE_ADMIN)]
     public function oauthCallback(Request $request): Response
     {
         // The connection comes from the session, never from the callback (see the SDK docs).

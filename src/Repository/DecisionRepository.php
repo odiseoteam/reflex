@@ -25,12 +25,12 @@ class DecisionRepository extends ServiceEntityRepository
      */
     public function findPending(): array
     {
-        return $this->findBy(['status' => Decision::PROPOSED], ['createdAt' => 'ASC']);
+        return $this->findBy(['status' => [Decision::PROPOSED, Decision::ASKED]], ['createdAt' => 'ASC']);
     }
 
     public function countPending(): int
     {
-        return $this->count(['status' => Decision::PROPOSED]);
+        return $this->count(['status' => [Decision::PROPOSED, Decision::ASKED]]);
     }
 
     /**
@@ -40,8 +40,9 @@ class DecisionRepository extends ServiceEntityRepository
     {
         /** @var list<Decision> $decisions */
         $decisions = $this->createQueryBuilder('d')
-            ->where('d.status != :proposed')
-            ->setParameter('proposed', Decision::PROPOSED)
+            ->where('d.status NOT IN (:pending)')
+            ->andWhere('d.decidedAt IS NOT NULL')
+            ->setParameter('pending', [Decision::PROPOSED, Decision::ASKED])
             ->orderBy('d.decidedAt', 'DESC')
             ->setMaxResults($limit)
             ->getQuery()

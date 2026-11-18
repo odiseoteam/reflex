@@ -25,6 +25,7 @@ class Reflex
     public const int DEFAULT_TIME_LIMIT = 120;
     /** Consecutive failed runs that disable a reflex. */
     public const int FAILURE_THRESHOLD = 3;
+    public const int MAX_APPROVALS = 5;
 
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
@@ -42,6 +43,10 @@ class Reflex
     /** @var array<string, string> tool name => ToolPolicy value */
     #[ORM\Column(type: Types::JSON, options: ['jsonb' => true])]
     private array $toolPolicies = [];
+
+    /** @var array<string, int> tool name => approvals it needs, when more than one */
+    #[ORM\Column(type: Types::JSON, options: ['jsonb' => true])]
+    private array $requiredApprovals = [];
 
     /** Tokens it may spend per UTC day; null for no limit. */
     #[ORM\Column(nullable: true)]
@@ -230,19 +235,34 @@ class Reflex
         return $this->toolPolicies;
     }
 
+    public function approvalsFor(string $toolName): int
+    {
+        return $this->requiredApprovals[$toolName] ?? 1;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    public function getRequiredApprovals(): array
+    {
+        return $this->requiredApprovals;
+    }
+
     /**
      * @param array<string, ToolPolicy> $policies
+     * @param array<string, int>        $approvals tool name => approvals it needs; 1 when missing
      */
-    public function setToolPolicies(array $policies): void
+    public function setToolPolicies(array $policies, array $approvals = []): void
     {
         $this->toolPolicies = array_map(static fn (ToolPolicy $policy): string => $policy->value, $policies);
+        $this->requiredApprovals = array_filter($approvals, static fn (int $count): bool => $count > 1);
         $this->updatedAt = new \DateTimeImmutable();
     }
 
     /**
      * What a run records, so later edits don't rewrite history.
      *
-     * @return array{name: string, instructions: string, model: string, toolPolicies: array<string, string>, updatedAt: string}
+     * @return array{name: string, instructions: string, model: string, toolPolicies: array<string, string>, requiredApprovals: array<string, int>, updatedAt: string}
      */
     public function snapshot(): array
     {
@@ -251,6 +271,7 @@ class Reflex
             'instructions' => $this->instructions,
             'model' => $this->model,
             'toolPolicies' => $this->toolPolicies,
+            'requiredApprovals' => $this->requiredApprovals,
             'updatedAt' => $this->updatedAt->format(\DATE_ATOM),
         ];
     }

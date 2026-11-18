@@ -12,7 +12,10 @@ use Mcp\Client\Auth\OAuth;
 use Mcp\Client\Auth\OAuthAuthenticator;
 use Mcp\Client\Auth\RedirectAuthorizationHandler;
 use Mcp\Client\Client;
+use Mcp\Client\Handler\Request\ElicitationCallbackInterface;
+use Mcp\Client\Handler\Request\ElicitationRequestHandler;
 use Mcp\Client\Transport\HttpTransport;
+use Mcp\Schema\ClientCapabilities;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpClient\NoPrivateNetworkHttpClient;
@@ -44,8 +47,10 @@ final readonly class McpClientFactory
 
     /**
      * Opens a connection. Throws AuthorizationPendingException when the user must authorize in the browser.
+     *
+     * With an elicitation callback, the server may ask for input in the middle of a call.
      */
-    public function connect(Connection $connection): Client
+    public function connect(Connection $connection, ?ElicitationCallbackInterface $elicitation = null): Client
     {
         $headers = [];
         $auth = null;
@@ -56,10 +61,15 @@ final readonly class McpClientFactory
             ConnectionAuth::None => null,
         };
 
-        $client = Client::builder()
+        $builder = Client::builder()
             ->setClientInfo(self::CLIENT_NAME, self::CLIENT_VERSION)
-            ->setLogger($this->logger)
-            ->build();
+            ->setLogger($this->logger);
+        if (null !== $elicitation) {
+            $builder->setCapabilities(new ClientCapabilities(elicitation: true, elicitationForm: true))
+                // @phpstan-ignore argument.type (the handler's template is not covariant upstream)
+                ->addRequestHandler(new ElicitationRequestHandler($elicitation, $this->logger));
+        }
+        $client = $builder->build();
 
         $client->connect(new HttpTransport(
             $connection->getUrl(),

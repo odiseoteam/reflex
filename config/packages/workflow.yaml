@@ -10,14 +10,21 @@ framework:
             supports:
                 - App\Entity\Decision
             initial_marking: proposed
-            places: [proposed, approved, rejected, executed, failed]
+            places: [proposed, asked, approved, rejected, executed, failed]
             transitions:
                 approve:
                     from: proposed
                     to: approved
                 reject:
-                    from: proposed
+                    from: [proposed, asked]
                     to: rejected
+                # The server paused the call to ask something.
+                ask:
+                    from: approved
+                    to: asked
+                answer:
+                    from: asked
+                    to: approved
                 execute:
                     from: approved
                     to: executed

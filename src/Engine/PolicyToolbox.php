@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Engine;
 
 use App\Entity\Decision;
+use App\Entity\DecisionKind;
 use App\Entity\Run;
 use App\Entity\RunStep;
 use App\Entity\RunStepKind;
@@ -21,6 +22,7 @@ use Symfony\AI\Platform\Tool\Tool;
 /**
  * Applies a reflex's policy in code: forbidden tools don't exist for the agent, tools
  * that need approval only create a Decision, and every call is recorded on the run.
+ * A call whose server asks for input pauses as a question for a person.
  *
  * Each call is stored before it runs, keyed by run, segment, ordinal, tool and arguments.
  * When a run resumes after a crash, a completed call returns its stored result instead of
@@ -103,10 +105,17 @@ final class PolicyToolbox implements ToolboxInterface
         try {
             $result = $entry['source']->toolbox->execute($toolCall);
         } catch (\Throwable $e) {
+            if (null !== $paused = $this->pauseForQuestion($entry['source'], $step, $toolCall)) {
+                return $paused;
+            }
             $step->fail($e->getMessage());
             $this->entityManager->flush();
 
             return new ToolResult($toolCall, 'The tool failed: '.$e->getMessage());
+        }
+
+        if (null !== $paused = $this->pauseForQuestion($entry['source'], $step, $toolCall)) {
+            return $paused;
         }
 
         $step->complete(self::stringify($result->getResult()));
@@ -148,8 +157,38 @@ final class PolicyToolbox implements ToolboxInterface
             $source->remoteName($name),
             $arguments,
             \is_string($reason) && '' !== trim($reason) ? trim($reason) : 'No reason given.',
+            requiredApprovals: $this->run->getReflex()->approvalsFor($name),
         ));
         $this->entityManager->flush();
+    }
+
+    /**
+     * The server cancelled the call to ask something; it repeats once a person answers.
+     */
+    private function pauseForQuestion(ConnectedToolbox $source, RunStep $step, ToolCall $toolCall): ?ToolResult
+    {
+        $question = $source->questions?->takeAsked();
+        if (null === $question) {
+            return null;
+        }
+
+        $name = $toolCall->getName();
+        $this->waitpoint ??= $this->openWaitpoint();
+        $step->complete(\sprintf('Paused: the server asked "%s". Waiting for a person to answer.', $question->message));
+        $this->entityManager->persist(new Decision(
+            $this->run,
+            $this->waitpoint,
+            $source->connection,
+            $name,
+            $source->remoteName($name),
+            $toolCall->getArguments(),
+            'The server asked for input while running it.',
+            DecisionKind::Question,
+            question: $question,
+        ));
+        $this->entityManager->flush();
+
+        return new ToolResult($toolCall, 'The server needs input from a person to finish this call, so it was paused. A person will answer and you will be told the outcome. Do not call it again for the same purpose.');
     }
 
     private function openWaitpoint(): Waitpoint

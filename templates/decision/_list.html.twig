@@ -4,8 +4,8 @@
             <a href="{{ path('app_decision_show', {id: decision.id}) }}" class="flex items-start justify-between gap-4 px-4 py-3 hover:bg-slate-50">
                 <div class="min-w-0">
                     <code class="text-sm font-semibold">{{ decision.toolName }}</code>
-                    <p class="truncate text-sm text-slate-600">{{ decision.reason }}</p>
-                    <p class="text-xs text-slate-500">{{ decision.run.reflexSnapshot.name }} · {{ decision.createdAt|date('Y-m-d H:i') }}</p>
+                    <p class="truncate text-sm text-slate-600">{{ decision.question ? decision.question.message : decision.reason }}</p>
+                    <p class="text-xs text-slate-500">{{ decision.run.reflexSnapshot.name }} · {{ decision.createdAt|date('Y-m-d H:i') }}{% if decision.status == 'proposed' and decision.requiredApprovals > 1 %} · {{ decision.countApprovals }}/{{ decision.requiredApprovals }} approvals{% endif %}</p>
                 </div>
                 {{ include('decision/_status.html.twig', {status: decision.status}) }}
             </a>

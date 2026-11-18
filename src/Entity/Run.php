@@ -26,7 +26,7 @@ class Run
     #[ORM\Column(enumType: RunStatus::class, length: 20)]
     private RunStatus $status = RunStatus::Queued;
 
-    /** @var array{name: string, instructions: string, model: string, toolPolicies: array<string, string>, updatedAt: string} the reflex as it was when the run was created */
+    /** @var array{name: string, instructions: string, model: string, toolPolicies: array<string, string>, requiredApprovals?: array<string, int>, updatedAt: string} the reflex as it was when the run was created */
     #[ORM\Column(type: Types::JSON, options: ['jsonb' => true])]
     private array $reflexSnapshot;
 
@@ -100,7 +100,7 @@ class Run
     }
 
     /**
-     * @return array{name: string, instructions: string, model: string, toolPolicies: array<string, string>, updatedAt: string}
+     * @return array{name: string, instructions: string, model: string, toolPolicies: array<string, string>, requiredApprovals?: array<string, int>, updatedAt: string}
      */
     public function getReflexSnapshot(): array
     {

@@ -5,12 +5,13 @@ declare(strict_types=1);
 namespace App\Mcp;
 
 use App\Entity\Connection;
+use App\Mcp\Elicitation\QuestionBox;
 use Mcp\Client\Client;
 use Mcp\Schema\Result\CallToolResult;
 use Symfony\AI\Agent\Bridge\Mcp\ToolsetInterface;
 
 /**
- * Tools of one connection, opened on first use.
+ * Tools of one connection, opened on first use. Questions its server asks go to the box.
  */
 final class ConnectionToolset implements ToolsetInterface
 {
@@ -19,7 +20,13 @@ final class ConnectionToolset implements ToolsetInterface
     public function __construct(
         private readonly Connection $connection,
         private readonly McpClientFactory $clientFactory,
+        private readonly QuestionBox $questions = new QuestionBox(),
     ) {
+    }
+
+    public function getQuestions(): QuestionBox
+    {
+        return $this->questions;
     }
 
     public function getConnection(): Connection
@@ -60,6 +67,6 @@ final class ConnectionToolset implements ToolsetInterface
 
     private function client(): Client
     {
-        return $this->client ??= $this->clientFactory->connect($this->connection);
+        return $this->client ??= $this->clientFactory->connect($this->connection, $this->questions);
     }
 }

@@ -14,6 +14,7 @@
                 <p class="text-xs text-slate-500">Tools synced {{ connection.toolsSyncedAt|date('Y-m-d H:i') }}</p>
             {% endif %}
         </div>
+        {% if is_granted('ROLE_ADMIN') %}
         <div class="flex items-center gap-2">
             <form method="post" action="{{ path('app_connection_sync', {id: connection.id}) }}" data-turbo="false">
                 <input type="hidden" name="_token" value="{{ csrf_token('sync-' ~ connection.id) }}">
@@ -26,6 +27,7 @@
                 <button class="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Remove</button>
             </form>
         </div>
+        {% endif %}
     </div>
 
     {% if connection.lastError %}

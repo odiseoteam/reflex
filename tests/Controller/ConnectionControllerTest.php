@@ -7,6 +7,7 @@ namespace App\Tests\Controller;
 use App\Entity\Connection;
 use App\Entity\ConnectionAuth;
 use App\Entity\ConnectionStatus;
+use App\Entity\User;
 use App\Repository\ConnectionRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
@@ -23,6 +24,11 @@ final class ConnectionControllerTest extends WebTestCase
         $this->client->disableReboot();
         $this->entityManager = self::getContainer()->get(EntityManagerInterface::class);
         $this->entityManager->getConnection()->beginTransaction();
+
+        $admin = new User('admin@example.com', 'Admin', true);
+        $this->entityManager->persist($admin);
+        $this->entityManager->flush();
+        $this->client->loginUser($admin);
     }
 
     protected function tearDown(): void
@@ -53,7 +59,7 @@ final class ConnectionControllerTest extends WebTestCase
         ]);
 
         self::assertResponseStatusCodeSame(422);
-        self::assertSelectorTextContains('form', 'A bearer token is required.');
+        self::assertSelectorTextContains('main form', 'A bearer token is required.');
     }
 
     public function testRejectsADuplicateName(): void
@@ -69,7 +75,7 @@ final class ConnectionControllerTest extends WebTestCase
         ]);
 
         self::assertResponseStatusCodeSame(422);
-        self::assertSelectorTextContains('form', 'Another connection already uses this name.');
+        self::assertSelectorTextContains('main form', 'Another connection already uses this name.');
     }
 
     public function testRefusesServersOnAPrivateNetwork(): void

@@ -12,8 +12,12 @@ use App\Entity\Reflex;
 use App\Entity\Run;
 use App\Entity\RunStepKind;
 use App\Entity\ToolPolicy;
+use App\Mcp\Elicitation\QuestionBox;
 use App\Repository\DecisionRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Mcp\Schema\Elicitation\ElicitationSchema;
+use Mcp\Schema\Elicitation\StringSchemaDefinition;
+use Mcp\Schema\Request\ElicitRequest;
 use Symfony\AI\Agent\Agent;
 use Symfony\AI\Agent\Toolbox\ToolboxInterface;
 use Symfony\AI\Agent\Toolbox\ToolResult;
@@ -180,6 +184,15 @@ final class FakeToolbox implements ToolboxInterface
     /** @var list<string> */
     public array $executed = [];
 
+    /**
+     * @param string|null $askingTool tool whose server asks for input, as an MCP server would mid-call
+     */
+    public function __construct(
+        public readonly QuestionBox $questions = new QuestionBox(),
+        private readonly ?string $askingTool = null,
+    ) {
+    }
+
     public function getTools(): array
     {
         $reference = new ExecutionReference(self::class);
@@ -194,6 +207,14 @@ final class FakeToolbox implements ToolboxInterface
     public function execute(ToolCall $toolCall): ToolResult
     {
         $this->executed[] = $toolCall->getName();
+
+        if ($toolCall->getName() === $this->askingTool) {
+            $schema = new ElicitationSchema(['label' => new StringSchemaDefinition('Label')], ['label']);
+            $answer = ($this->questions)(ElicitRequest::forForm('Which label should it get?', $schema));
+            if (!$answer->isAccepted()) {
+                return new ToolResult($toolCall, 'Cancelled by the client.');
+            }
+        }
 
         return new ToolResult($toolCall, ['issues' => []]);
     }

@@ -4,15 +4,19 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Mcp\Elicitation\Question;
 use App\Repository\DecisionRepository;
+use Doctrine\Common\Collections\ArrayCollection;
+use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * An action an agent proposed and a person decides on. What runs on approval is exactly
- * this tool with these arguments, on this connection; the model is not asked again.
+ * A tool call waiting on people: one the agent proposed, or one a server paused to ask
+ * something. What runs is exactly this tool with these arguments, on this connection;
+ * the model is not asked again.
  *
  * Its status is the marking of the "decision" workflow.
  */
@@ -21,6 +25,7 @@ use Symfony\Component\Uid\Uuid;
 class Decision
 {
     public const string PROPOSED = 'proposed';
+    public const string ASKED = 'asked';
     public const string APPROVED = 'approved';
     public const string REJECTED = 'rejected';
     public const string EXECUTED = 'executed';
@@ -35,6 +40,24 @@ class Decision
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $note = null;
+
+    /** @var array{key: string, message: string, schema: array<string, mixed>}|null open question from the server */
+    #[ORM\Column(type: Types::JSON, nullable: true, options: ['jsonb' => true])]
+    private ?array $question = null;
+
+    /** @var array<string, array<string, mixed>> question key => answer, replayed when the call repeats */
+    #[ORM\Column(type: Types::JSON, options: ['jsonb' => true])]
+    private array $answers = [];
+
+    /** Who last answered or declined the server's question. */
+    #[ORM\ManyToOne]
+    #[ORM\JoinColumn(onDelete: 'SET NULL')]
+    private ?User $respondent = null;
+
+    /** @var Collection<int, Vote> */
+    #[ORM\OneToMany(targetEntity: Vote::class, mappedBy: 'decision')]
+    #[ORM\OrderBy(['createdAt' => \SortDirection::Ascending])]
+    private Collection $votes;
 
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $result = null;
@@ -80,10 +103,99 @@ class Decision
         /** Why the agent proposes it, in its own words. */
         #[ORM\Column(type: Types::TEXT)]
         private string $reason,
+        #[ORM\Column(length: 20)]
+        private DecisionKind $kind = DecisionKind::Proposal,
+        /** Approvals it needs before it runs. */
+        #[ORM\Column]
+        private int $requiredApprovals = 1,
+        ?Question $question = null,
     ) {
         $this->id = Uuid::v7();
         $this->segment = $run->getSegment();
         $this->createdAt = new \DateTimeImmutable();
+        $this->votes = new ArrayCollection();
+        if (null !== $question) {
+            $this->question = $question->toArray();
+            $this->status = self::ASKED;
+        }
+    }
+
+    public function getKind(): DecisionKind
+    {
+        return $this->kind;
+    }
+
+    public function getRequiredApprovals(): int
+    {
+        return $this->requiredApprovals;
+    }
+
+    /**
+     * @return Collection<int, Vote>
+     */
+    public function getVotes(): Collection
+    {
+        return $this->votes;
+    }
+
+    public function addVote(Vote $vote): void
+    {
+        $this->votes->add($vote);
+    }
+
+    public function countApprovals(): int
+    {
+        return $this->votes->filter(static fn (Vote $vote): bool => $vote->isApprove())->count();
+    }
+
+    public function hasVoted(User $user): bool
+    {
+        return $this->votes->exists(static fn (int $key, Vote $vote): bool => $vote->getUser()->getId()->equals($user->getId()));
+    }
+
+    public function getRespondent(): ?User
+    {
+        return $this->respondent;
+    }
+
+    public function setRespondent(?User $respondent): void
+    {
+        $this->respondent = $respondent;
+    }
+
+    public function getQuestion(): ?Question
+    {
+        return null === $this->question ? null : Question::fromArray($this->question);
+    }
+
+    /**
+     * The server paused the call to ask this; it is repeated once answered.
+     */
+    public function ask(Question $question): void
+    {
+        $this->question = $question->toArray();
+        $this->executionStartedAt = null;
+    }
+
+    /**
+     * @param array<string, mixed> $content
+     */
+    public function answer(array $content): void
+    {
+        if (null === $this->question) {
+            throw new \LogicException('There is no open question.');
+        }
+
+        $this->answers[$this->question['key']] = $content;
+        $this->question = null;
+    }
+
+    /**
+     * @return array<string, array<string, mixed>>
+     */
+    public function getAnswers(): array
+    {
+        return $this->answers;
     }
 
     public function getSegment(): int
@@ -153,9 +265,12 @@ class Decision
         }
     }
 
+    /**
+     * Whether it waits on a person.
+     */
     public function isPending(): bool
     {
-        return self::PROPOSED === $this->status;
+        return \in_array($this->status, [self::PROPOSED, self::ASKED], true);
     }
 
     /**

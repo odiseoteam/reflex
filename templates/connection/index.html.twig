@@ -8,7 +8,9 @@
             <h1 class="text-2xl font-semibold">Connections</h1>
             <p class="text-sm text-slate-600">MCP servers Reflex can read from and act on.</p>
         </div>
+        {% if is_granted('ROLE_ADMIN') %}
         <a href="{{ path('app_connection_new') }}" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">Connect a server</a>
+        {% endif %}
     </div>
 
     {% if connections is empty %}

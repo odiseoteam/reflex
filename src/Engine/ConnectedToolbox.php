@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Engine;
 
 use App\Entity\Connection;
+use App\Mcp\Elicitation\QuestionBox;
 use Symfony\AI\Agent\Toolbox\ToolboxInterface;
 
 /**
@@ -15,6 +16,8 @@ final readonly class ConnectedToolbox
     public function __construct(
         public ToolboxInterface $toolbox,
         public ?Connection $connection = null,
+        /** Where its server's questions land, when it can ask any. */
+        public ?QuestionBox $questions = null,
     ) {
     }
 

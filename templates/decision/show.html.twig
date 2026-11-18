@@ -3,9 +3,12 @@
 {% block title %}Decision · {{ decision.toolName }} · Reflex{% endblock %}
 
 {% block body %}
-    {% if decision.status in ['approved'] %}
+    {% if decision.status == 'approved' %}
         <meta http-equiv="refresh" content="2">
     {% endif %}
+
+    {% set is_question = decision.kind.value == 'question' %}
+    {% set json_flags = constant('JSON_PRETTY_PRINT') b-or constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE') %}
 
     <a href="{{ path('app_inbox') }}" class="text-sm text-slate-600 hover:text-slate-900">← Inbox</a>
     <div class="mb-6 mt-1 flex flex-wrap items-center gap-3">
@@ -14,36 +17,99 @@
     </div>
 
     <section class="mb-6 rounded-lg border border-slate-200 bg-white p-4">
-        <h2 class="mb-1 text-sm font-semibold text-slate-700">Why the agent proposes it</h2>
-        <p class="whitespace-pre-line text-sm">{{ decision.reason }}</p>
+        {% if is_question %}
+            <h2 class="mb-1 text-sm font-semibold text-slate-700">The server paused this call to ask for input</h2>
+            <p class="text-sm text-slate-600">The agent ran it automatically; the server needs a person before it can finish.</p>
+        {% else %}
+            <h2 class="mb-1 text-sm font-semibold text-slate-700">Why the agent proposes it</h2>
+            <p class="whitespace-pre-line text-sm">{{ decision.reason }}</p>
+        {% endif %}
         <p class="mt-3 text-xs text-slate-500">
-            Proposed by <a class="underline" href="{{ path('app_run_show', {id: decision.run.id}) }}">a run of {{ decision.run.reflexSnapshot.name }}</a>
+            From <a class="underline" href="{{ path('app_run_show', {id: decision.run.id}) }}">a run of {{ decision.run.reflexSnapshot.name }}</a>
             {{ decision.run.event ? 'on ' ~ decision.run.event.source ~ ' · ' ~ decision.run.event.type }}
             · {{ decision.createdAt|date('Y-m-d H:i:s') }}
         </p>
     </section>
 
     <section class="mb-6">
-        <h2 class="mb-2 text-lg font-semibold">What runs if you approve</h2>
+        <h2 class="mb-2 text-lg font-semibold">{{ is_question ? 'The call' : 'What runs if approved' }}</h2>
         <p class="mb-2 text-sm text-slate-600">
             Tool <code>{{ decision.remoteToolName }}</code> on {{ decision.connection ? decision.connection.name : 'a removed connection' }}, with exactly these arguments:
         </p>
-        <pre class="overflow-auto rounded-lg border border-slate-200 bg-white p-4 text-xs">{{ decision.arguments|json_encode(constant('JSON_PRETTY_PRINT') b-or constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE')) }}</pre>
+        <pre class="overflow-auto rounded-lg border border-slate-200 bg-white p-4 text-xs">{{ decision.arguments|json_encode(json_flags) }}</pre>
     </section>
 
-    {% if decision.pending %}
-        <form method="post" class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
-            <input type="hidden" name="_token" value="{{ csrf_token('decide-' ~ decision.id) }}">
-            <label class="block text-sm font-medium text-slate-700" for="note">Note for the agent (optional)</label>
-            <textarea id="note" name="note" rows="2" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm"></textarea>
-            <div class="flex gap-2">
-                <button formaction="{{ path('app_decision_approve', {id: decision.id}) }}" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600">Approve and run</button>
-                <button formaction="{{ path('app_decision_reject', {id: decision.id}) }}" class="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Reject</button>
-            </div>
-        </form>
-    {% else %}
+    {% if decision.question %}
+        <section class="mb-6 rounded-lg border border-violet-200 bg-violet-50 p-4">
+            <h2 class="mb-1 text-sm font-semibold text-violet-900">The server asks</h2>
+            <p class="mb-4 whitespace-pre-line text-sm text-violet-950">{{ decision.question.message }}</p>
+            {% if answer_form %}
+                {% form_theme answer_form 'form/tailwind.html.twig' %}
+                {{ form_start(answer_form, {attr: {class: 'space-y-4'}}) }}
+                    {{ form_widget(answer_form) }}
+                    <button class="rounded-md bg-violet-700 px-4 py-2 text-sm font-medium text-white hover:bg-violet-600">Answer and continue</button>
+                {{ form_end(answer_form) }}
+                <form method="post" action="{{ path('app_decision_decline', {id: decision.id}) }}" class="mt-4 flex items-end gap-2 border-t border-violet-200 pt-4">
+                    <input type="hidden" name="_token" value="{{ csrf_token('decide-' ~ decision.id) }}">
+                    <div class="flex-1">
+                        <label class="mb-1 block text-xs font-medium text-violet-900" for="decline-note">Or decline, with a note for the agent</label>
+                        <input id="decline-note" name="note" class="block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm">
+                    </div>
+                    <button class="rounded-md border border-slate-300 bg-white px-4 py-1.5 text-sm text-slate-700 hover:bg-slate-100">Decline</button>
+                </form>
+            {% else %}
+                <p class="text-sm text-violet-900">Waiting for an admin to answer.</p>
+            {% endif %}
+        </section>
+    {% endif %}
+
+    {% if decision.kind.value == 'proposal' and (decision.requiredApprovals > 1 or decision.votes|length > 0) %}
+        <section class="mb-6 rounded-lg border border-slate-200 bg-white p-4 text-sm">
+            <h2 class="mb-2 font-semibold">Votes · {{ decision.countApprovals }} of {{ decision.requiredApprovals }} approvals</h2>
+            <ul class="space-y-1">
+                {% for vote in decision.votes %}
+                    <li>
+                        <span class="{{ vote.approve ? 'text-emerald-700' : 'text-red-700' }}">{{ vote.approve ? 'Approved' : 'Rejected' }}</span>
+                        by {{ vote.user.name }} · {{ vote.createdAt|date('Y-m-d H:i:s') }}{% if vote.note %}: “{{ vote.note }}”{% endif %}
+                    </li>
+                {% else %}
+                    <li class="text-slate-500">No votes yet.</li>
+                {% endfor %}
+            </ul>
+        </section>
+    {% endif %}
+
+    {% if decision.status == 'proposed' %}
+        {% if is_granted('DECISION_DECIDE', decision) %}
+            <form method="post" class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
+                <input type="hidden" name="_token" value="{{ csrf_token('decide-' ~ decision.id) }}">
+                <label class="block text-sm font-medium text-slate-700" for="note">Note for the agent (optional)</label>
+                <textarea id="note" name="note" rows="2" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm"></textarea>
+                <div class="flex gap-2">
+                    <button formaction="{{ path('app_decision_approve', {id: decision.id}) }}" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600">
+                        {{ decision.requiredApprovals - decision.countApprovals > 1 ? 'Approve' : 'Approve and run' }}
+                    </button>
+                    <button formaction="{{ path('app_decision_reject', {id: decision.id}) }}" class="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Reject</button>
+                </div>
+            </form>
+        {% else %}
+            <p class="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
+                {{ is_granted('ROLE_ADMIN') ? 'You already voted. Waiting for other admins.' : 'Waiting for an admin to decide.' }}
+            </p>
+        {% endif %}
+    {% elseif not decision.pending %}
         <section class="space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-sm">
-            <p>Decided {{ decision.decidedAt ? decision.decidedAt|date('Y-m-d H:i:s') }}{% if decision.note %}: “{{ decision.note }}”{% endif %}</p>
+            <p>
+                Decided {{ decision.decidedAt ? decision.decidedAt|date('Y-m-d H:i:s') }}
+                {%- if decision.respondent %} by {{ decision.respondent.name }}{% endif %}
+                {%- if decision.note %}: “{{ decision.note }}”{% endif %}
+            </p>
+            {% if decision.answers is not empty %}
+                <h3 class="font-semibold">Answers given to the server</h3>
+                {% for answer in decision.answers %}
+                    <pre class="max-h-48 overflow-auto rounded bg-slate-50 p-2 text-xs">{{ answer|json_encode(json_flags) }}</pre>
+                {% endfor %}
+            {% endif %}
             {% if decision.status == 'approved' %}<p class="text-slate-600">Running…</p>{% endif %}
             {% if decision.result %}
                 <h3 class="font-semibold">Result</h3>
