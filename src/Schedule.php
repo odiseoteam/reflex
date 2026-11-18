@@ -6,7 +6,6 @@ namespace App;
 
 use App\Message\FireSchedules;
 use App\Message\PruneRuns;
-use Symfony\Component\Lock\LockFactory;
 use Symfony\Component\Scheduler\Attribute\AsSchedule;
 use Symfony\Component\Scheduler\RecurringMessage;
 use Symfony\Component\Scheduler\Schedule as SymfonySchedule;
@@ -14,16 +13,15 @@ use Symfony\Component\Scheduler\ScheduleProviderInterface;
 use Symfony\Contracts\Cache\CacheInterface;
 
 /**
- * A tick each minute fires the reflexes whose cron is due, read from the database so
- * edits apply without restarting workers. Old runs are pruned nightly. The lock keeps
- * several workers from each ticking.
+ * A tick each minute fires the reflexes whose cron, poll or absence window is due, read
+ * from the database so edits apply without restarting workers. Old runs are pruned nightly.
+ * Several workers may tick at once: each slot, poll and absence is claimed atomically.
  */
 #[AsSchedule]
 final readonly class Schedule implements ScheduleProviderInterface
 {
     public function __construct(
         private CacheInterface $cache,
-        private LockFactory $lockFactory,
     ) {
     }
 
@@ -31,7 +29,6 @@ final readonly class Schedule implements ScheduleProviderInterface
     {
         return (new SymfonySchedule())
             ->stateful($this->cache)
-            ->lock($this->lockFactory->createLock('reflex-schedule'))
             ->processOnlyLastMissedRun(true)
             ->add(RecurringMessage::every('1 minute', new FireSchedules()))
             ->add(RecurringMessage::cron('17 3 * * *', new PruneRuns()));

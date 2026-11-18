@@ -24,7 +24,7 @@
                     <a href="{{ path('app_reflex_show', {id: reflex.id}) }}" class="flex items-center justify-between px-4 py-3 hover:bg-slate-50">
                         <div>
                             <div class="font-medium">{{ reflex.name }}</div>
-                            <div class="text-sm text-slate-500">{% if reflex.scheduled %}On schedule <code>{{ reflex.cron }}</code> UTC · next {{ reflex.nextRunAt(date())|date('Y-m-d H:i', 'UTC') }}{% else %}On <code>{{ reflex.triggerSource }}</code> · <code>{{ reflex.triggerEvent }}</code>{% endif %}</div>
+                            <div class="text-sm text-slate-500">{{ include('reflex/_trigger.html.twig') }}</div>
                         </div>
                         <span class="text-xs {{ reflex.enabled ? 'text-emerald-700' : 'text-slate-500' }}">{{ reflex.enabled ? 'Enabled' : 'Disabled' }}</span>
                     </a>

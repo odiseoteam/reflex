@@ -7,12 +7,15 @@ namespace App\Scheduler;
 use App\Entity\IncomingEvent;
 use App\Entity\Run;
 use App\Entity\RunStatus;
+use App\Entity\Waitpoint;
+use App\Entity\WaitpointKind;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Clock\ClockInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 
 /**
- * Deletes finished runs, with their steps and decisions, and events nothing runs on any more.
+ * Deletes finished runs, with their steps and decisions, resolved absence waits, and events
+ * nothing refers to any more.
  * Waiting runs are kept however old they are.
  */
 final readonly class RunPruner
@@ -42,9 +45,19 @@ final readonly class RunPruner
             ->execute();
 
         $this->entityManager->createQueryBuilder()
+            ->delete(Waitpoint::class, 'w')
+            ->where('w.kind = :absence')
+            ->andWhere('w.resolvedAt < :cutoff')
+            ->setParameter('absence', WaitpointKind::Absence)
+            ->setParameter('cutoff', $cutoff)
+            ->getQuery()
+            ->execute();
+
+        $this->entityManager->createQueryBuilder()
             ->delete(IncomingEvent::class, 'e')
             ->where('e.receivedAt < :cutoff')
             ->andWhere(\sprintf('NOT EXISTS (SELECT 1 FROM %s r WHERE r.event = e)', Run::class))
+            ->andWhere(\sprintf('NOT EXISTS (SELECT 1 FROM %s w WHERE w.event = e)', Waitpoint::class))
             ->setParameter('cutoff', $cutoff)
             ->getQuery()
             ->execute();

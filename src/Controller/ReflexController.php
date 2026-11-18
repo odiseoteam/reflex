@@ -54,7 +54,7 @@ final class ReflexController extends AbstractController
         $form->handleRequest($request);
 
         if ($form->isSubmitted() && $form->isValid()) {
-            $reflex = new Reflex($input->name, $input->triggerSource, $input->triggerEvent, $input->instructions, $input->model);
+            $reflex = new Reflex($input->name, $input->triggerSource, $input->triggerEvent ?? Reflex::ANY_EVENT, $input->instructions, $input->model);
             $input->applyTo($reflex);
             $this->entityManager->persist($reflex);
             $this->entityManager->flush();

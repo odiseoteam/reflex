@@ -6,6 +6,8 @@ namespace App\Form;
 
 use App\Entity\Connection;
 use App\Entity\Reflex;
+use App\Trigger\AbsenceTrigger;
+use App\Trigger\PollTrigger;
 use Cron\CronExpression;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
@@ -13,7 +15,9 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
 final class ReflexInput
 {
     public const array MODELS = ['claude-sonnet-5-5', 'claude-opus-5-5', 'claude-haiku-5-5'];
-    public const array SOURCES = ['generic', 'github', 'stripe', Reflex::SCHEDULE_SOURCE];
+    public const array WEBHOOK_SOURCES = ['generic', 'github', 'stripe'];
+    public const array SOURCES = [...self::WEBHOOK_SOURCES, Reflex::SCHEDULE_SOURCE, Reflex::POLL_SOURCE, Reflex::ABSENCE_SOURCE];
+    private const string EVENT_PATTERN = '/^[A-Za-z0-9_.:-]{1,100}$/';
 
     #[Assert\NotBlank]
     #[Assert\Length(max: 100)]
@@ -22,12 +26,40 @@ final class ReflexInput
     #[Assert\Choice(choices: self::SOURCES)]
     public string $triggerSource = 'generic';
 
-    #[Assert\NotBlank]
-    #[Assert\Regex(pattern: '/^(\*|[A-Za-z0-9_.:-]{1,100})$/', message: 'Use an event type such as "issue.opened", or "*" for any.')]
-    public string $triggerEvent = Reflex::ANY_EVENT;
+    public ?string $triggerEvent = Reflex::ANY_EVENT;
 
     #[Assert\Length(max: 100)]
     public ?string $cron = null;
+
+    public ?Connection $pollConnection = null;
+
+    #[Assert\Length(max: 255)]
+    public ?string $pollTool = null;
+
+    /** JSON object of arguments. */
+    #[Assert\Length(max: 5000)]
+    public ?string $pollArguments = null;
+
+    #[Assert\Range(min: 1, max: 1440)]
+    public int $pollIntervalMinutes = 5;
+
+    #[Assert\Length(max: 100)]
+    public ?string $pollItemKey = 'id';
+
+    #[Assert\Choice(choices: self::WEBHOOK_SOURCES)]
+    public string $absenceSource = 'generic';
+
+    #[Assert\Length(max: 100)]
+    public ?string $absenceWhen = null;
+
+    #[Assert\Length(max: 100)]
+    public ?string $absenceMissing = null;
+
+    #[Assert\Range(min: 1, max: 10080)]
+    public int $absenceWithinMinutes = 30;
+
+    #[Assert\Length(max: 200)]
+    public ?string $absenceCorrelation = null;
 
     #[Assert\NotBlank]
     #[Assert\Length(max: 10000)]
@@ -57,6 +89,26 @@ final class ReflexInput
         $input->triggerSource = $reflex->getTriggerSource();
         $input->triggerEvent = $reflex->getTriggerEvent();
         $input->cron = $reflex->getCron();
+        $poll = $reflex->getPollTrigger();
+        if (null !== $poll) {
+            foreach ($reflex->getConnections() as $connection) {
+                if ($connection->getId()->toRfc4122() === $poll->connectionId) {
+                    $input->pollConnection = $connection;
+                }
+            }
+            $input->pollTool = $poll->tool;
+            $input->pollArguments = [] === $poll->arguments ? null : json_encode($poll->arguments, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_SLASHES | \JSON_THROW_ON_ERROR);
+            $input->pollIntervalMinutes = $poll->intervalMinutes;
+            $input->pollItemKey = $poll->itemKey;
+        }
+        $absence = $reflex->getAbsenceTrigger();
+        if (null !== $absence) {
+            $input->absenceSource = $absence->source;
+            $input->absenceWhen = $absence->whenEvent;
+            $input->absenceMissing = $absence->missingEvent;
+            $input->absenceWithinMinutes = $absence->withinMinutes;
+            $input->absenceCorrelation = $absence->correlationPath;
+        }
         $input->instructions = $reflex->getInstructions();
         $input->model = $reflex->getModel();
         $input->enabled = $reflex->isEnabled();
@@ -70,23 +122,95 @@ final class ReflexInput
 
     public function applyTo(Reflex $reflex): void
     {
-        $scheduled = Reflex::SCHEDULE_SOURCE === $this->triggerSource;
-        $reflex->update($this->name, $this->triggerSource, $scheduled ? Reflex::ANY_EVENT : $this->triggerEvent, $this->instructions, $this->model, $this->enabled, $this->connections);
-        $reflex->setCron($scheduled ? trim((string) $this->cron) : null);
+        $webhook = \in_array($this->triggerSource, self::WEBHOOK_SOURCES, true);
+        $connections = $this->connections;
+        if (Reflex::POLL_SOURCE === $this->triggerSource && null !== $this->pollConnection && !\in_array($this->pollConnection, $connections, true)) {
+            $connections[] = $this->pollConnection;
+        }
+
+        $reflex->update($this->name, $this->triggerSource, $webhook ? (string) $this->triggerEvent : Reflex::ANY_EVENT, $this->instructions, $this->model, $this->enabled, $connections);
+        $reflex->setCron(Reflex::SCHEDULE_SOURCE === $this->triggerSource ? trim((string) $this->cron) : null);
+        $reflex->setTriggerConfig(match ($this->triggerSource) {
+            Reflex::POLL_SOURCE => new PollTrigger(
+                $this->pollConnection?->getId()->toRfc4122() ?? '',
+                trim((string) $this->pollTool),
+                $this->pollArgumentsArray() ?? [],
+                $this->pollIntervalMinutes,
+                '' === trim((string) $this->pollItemKey) ? null : trim((string) $this->pollItemKey),
+            ),
+            Reflex::ABSENCE_SOURCE => new AbsenceTrigger($this->absenceSource, trim((string) $this->absenceWhen), trim((string) $this->absenceMissing), $this->absenceWithinMinutes, trim((string) $this->absenceCorrelation)),
+            default => null,
+        });
         $reflex->setLimits($this->dailyTokenBudget, $this->maxToolCalls, $this->timeLimitSeconds);
     }
 
     #[Assert\Callback]
-    public function validateCron(ExecutionContextInterface $context): void
+    public function validateTrigger(ExecutionContextInterface $context): void
     {
-        if (Reflex::SCHEDULE_SOURCE !== $this->triggerSource) {
-            return;
+        $violation = static fn (string $path, string $message) => $context->buildViolation($message)->atPath($path)->addViolation();
+
+        match ($this->triggerSource) {
+            Reflex::SCHEDULE_SOURCE => null === $this->cron || !CronExpression::isValidExpression(trim($this->cron))
+                ? $violation('cron', 'Use a cron expression such as "0 9 * * 1" (Mondays at 09:00 UTC).')
+                : null,
+            Reflex::POLL_SOURCE => $this->validatePoll($violation),
+            Reflex::ABSENCE_SOURCE => $this->validateAbsence($violation),
+            default => 1 === preg_match('/^(\*|[A-Za-z0-9_.:-]{1,100})$/', (string) $this->triggerEvent)
+                ? null
+                : $violation('triggerEvent', 'Use an event type such as "issue.opened", or "*" for any.'),
+        };
+    }
+
+    /**
+     * @param \Closure(string, string): void $violation
+     */
+    private function validatePoll(\Closure $violation): void
+    {
+        if (null === $this->pollConnection) {
+            $violation('pollConnection', 'Pick the connection to poll.');
+        }
+        if (1 !== preg_match('/^[A-Za-z0-9_.-]{1,255}$/', trim((string) $this->pollTool))) {
+            $violation('pollTool', 'Use the tool name as the server lists it, e.g. "list_issues".');
+        }
+        if (null === $this->pollArgumentsArray()) {
+            $violation('pollArguments', 'Use a JSON object, e.g. {"state": "open"}.');
+        }
+    }
+
+    /**
+     * @param \Closure(string, string): void $violation
+     */
+    private function validateAbsence(\Closure $violation): void
+    {
+        foreach (['absenceWhen' => $this->absenceWhen, 'absenceMissing' => $this->absenceMissing] as $path => $event) {
+            if (1 !== preg_match(self::EVENT_PATTERN, trim((string) $event))) {
+                $violation($path, 'Use an event type such as "email_captured".');
+            }
+        }
+        if (null !== $this->absenceWhen && trim($this->absenceWhen) === trim((string) $this->absenceMissing)) {
+            $violation('absenceMissing', 'It must differ from the first event.');
+        }
+        if (1 !== preg_match('/^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$/', trim((string) $this->absenceCorrelation))) {
+            $violation('absenceCorrelation', 'Use a dot path into the payload, e.g. "customer.email".');
+        }
+    }
+
+    /**
+     * @return array<string, mixed>|null null when it isn't a JSON object
+     */
+    private function pollArgumentsArray(): ?array
+    {
+        $json = trim((string) $this->pollArguments);
+        if ('' === $json) {
+            return [];
         }
 
-        if (null === $this->cron || !CronExpression::isValidExpression(trim($this->cron))) {
-            $context->buildViolation('Use a cron expression such as "0 9 * * 1" (Mondays at 09:00 UTC).')
-                ->atPath('cron')
-                ->addViolation();
+        try {
+            $arguments = json_decode($json, true, 32, \JSON_THROW_ON_ERROR);
+        } catch (\JsonException) {
+            return null;
         }
+
+        return PollTrigger::object($arguments);
     }
 }

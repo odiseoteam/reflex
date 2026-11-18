@@ -7,11 +7,13 @@ namespace App\Engine;
 use App\Entity\IncomingEvent;
 use App\Entity\Reflex;
 use App\Entity\Run;
+use App\Event\EventReceived;
 use App\Message\RunReflex;
 use App\Repository\ReflexRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Messenger\MessageBusInterface;
+use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 /**
  * Stores an incoming event once and queues a run for every reflex it triggers.
@@ -22,6 +24,7 @@ final readonly class EventIntake
         private EntityManagerInterface $entityManager,
         private ReflexRepository $reflexes,
         private MessageBusInterface $bus,
+        private EventDispatcherInterface $dispatcher,
         private LoggerInterface $logger,
     ) {
     }
@@ -39,7 +42,10 @@ final readonly class EventIntake
             return [];
         }
 
-        return $this->queue(new IncomingEvent($source, $externalId, $type, $payload), $this->reflexes->findTriggeredBy($source, $type));
+        $runs = $this->queue($event = new IncomingEvent($source, $externalId, $type, $payload), $this->reflexes->findTriggeredBy($source, $type));
+        $this->dispatcher->dispatch(new EventReceived($event));
+
+        return $runs;
     }
 
     /**

@@ -7,13 +7,35 @@
 {% block body %}
     <h1 class="mb-6 text-2xl font-semibold">{{ reflex ? 'Edit ' ~ reflex.name : 'New reflex' }}</h1>
 
-    {{ form_start(form, {attr: {class: 'max-w-2xl space-y-5 rounded-lg border border-slate-200 bg-white p-6'}}) }}
+    {{ form_start(form, {attr: {class: 'max-w-2xl space-y-5 rounded-lg border border-slate-200 bg-white p-6', 'data-controller': 'trigger-fields'}}) }}
         {{ form_row(form.name) }}
-        <div class="grid gap-4 sm:grid-cols-3">
-            {{ form_row(form.triggerSource) }}
-            {{ form_row(form.triggerEvent) }}
-            {{ form_row(form.cron) }}
+        <div class="grid gap-4 sm:grid-cols-2">
+            {{ form_row(form.triggerSource, {attr: {'data-trigger-fields-target': 'source', 'data-action': 'trigger-fields#toggle'}}) }}
+            <div data-trigger-for="generic github stripe">{{ form_row(form.triggerEvent) }}</div>
+            <div data-trigger-for="schedule">{{ form_row(form.cron) }}</div>
         </div>
+        <fieldset data-trigger-for="poll" class="space-y-4 rounded-md border border-slate-200 p-4">
+            <legend class="px-1 text-sm font-medium text-slate-700">Poll an MCP tool</legend>
+            <div class="grid gap-4 sm:grid-cols-2">
+                {{ form_row(form.pollConnection) }}
+                {{ form_row(form.pollTool) }}
+            </div>
+            {{ form_row(form.pollArguments) }}
+            <div class="grid gap-4 sm:grid-cols-2">
+                {{ form_row(form.pollIntervalMinutes) }}
+                {{ form_row(form.pollItemKey) }}
+            </div>
+        </fieldset>
+        <fieldset data-trigger-for="absence" class="space-y-4 rounded-md border border-slate-200 p-4">
+            <legend class="px-1 text-sm font-medium text-slate-700">X without Y</legend>
+            <div class="grid gap-4 sm:grid-cols-2">
+                {{ form_row(form.absenceSource) }}
+                {{ form_row(form.absenceCorrelation) }}
+                {{ form_row(form.absenceWhen) }}
+                {{ form_row(form.absenceMissing) }}
+                {{ form_row(form.absenceWithinMinutes) }}
+            </div>
+        </fieldset>
         {{ form_row(form.instructions) }}
         {{ form_row(form.model) }}
         {{ form_row(form.connections) }}

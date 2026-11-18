@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Repository\ReflexRepository;
+use App\Trigger\AbsenceTrigger;
+use App\Trigger\PollTrigger;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -23,6 +25,12 @@ class Reflex
     public const string ANY_EVENT = '*';
     /** Trigger source of reflexes that run on a cron schedule. */
     public const string SCHEDULE_SOURCE = 'schedule';
+    /** Trigger source of reflexes that poll an MCP tool. */
+    public const string POLL_SOURCE = 'poll';
+    /** Trigger source of reflexes that fire when an event doesn't follow another. */
+    public const string ABSENCE_SOURCE = 'absence';
+    /** Item keys a poll remembers, newest last. */
+    public const int POLL_MEMORY = 1000;
     public const int DEFAULT_MAX_TOOL_CALLS = 10;
     public const int DEFAULT_TIME_LIMIT = 120;
     /** Consecutive failed runs that disable a reflex. */
@@ -53,6 +61,17 @@ class Reflex
     /** Slot the schedule last fired for. */
     #[ORM\Column(nullable: true)]
     private ?\DateTimeImmutable $lastFiredAt = null;
+
+    /** @var array<mixed> settings of a poll or absence trigger */
+    #[ORM\Column(type: Types::JSON, options: ['jsonb' => true])]
+    private array $triggerConfig = [];
+
+    /** @var array{keys?: list<string>, hash?: string}|null what the last poll saw */
+    #[ORM\Column(type: Types::JSON, nullable: true, options: ['jsonb' => true])]
+    private ?array $pollState = null;
+
+    #[ORM\Column(nullable: true)]
+    private ?\DateTimeImmutable $lastPolledAt = null;
 
     /** @var array<string, int> tool name => approvals it needs, when more than one */
     #[ORM\Column(type: Types::JSON, options: ['jsonb' => true])]
@@ -177,29 +196,79 @@ class Reflex
     }
 
     /**
-     * The latest slot due at $now, once: null if it already fired or the reflex
-     * was created after it. Missed slots collapse into the latest one.
+     * The latest slot due at $now, or null if it already fired or the reflex was created
+     * after it. Missed slots collapse into the latest one.
      */
-    public function claimDueSlot(\DateTimeImmutable $now): ?\DateTimeImmutable
+    public function dueSlot(\DateTimeImmutable $now): ?\DateTimeImmutable
     {
         if (!$this->isScheduled() || !$this->enabled) {
             return null;
         }
 
         $slot = \DateTimeImmutable::createFromInterface((new \Cron\CronExpression((string) $this->cron))->getPreviousRunDate($now, 0, true, 'UTC'));
-        $since = $this->lastFiredAt ?? $this->createdAt;
-        if ($slot <= $since) {
-            return null;
-        }
 
-        $this->lastFiredAt = $slot;
-
-        return $slot;
+        return $slot > ($this->lastFiredAt ?? $this->createdAt) ? $slot : null;
     }
 
     public function nextRunAt(\DateTimeInterface $now): ?\DateTimeImmutable
     {
         return $this->isScheduled() ? \DateTimeImmutable::createFromInterface((new \Cron\CronExpression((string) $this->cron))->getNextRunDate($now, 0, false, 'UTC')) : null;
+    }
+
+    public function getPollTrigger(): ?PollTrigger
+    {
+        return self::POLL_SOURCE === $this->triggerSource && [] !== $this->triggerConfig ? PollTrigger::fromArray($this->triggerConfig) : null;
+    }
+
+    public function getAbsenceTrigger(): ?AbsenceTrigger
+    {
+        return self::ABSENCE_SOURCE === $this->triggerSource && [] !== $this->triggerConfig ? AbsenceTrigger::fromArray($this->triggerConfig) : null;
+    }
+
+    public function setTriggerConfig(PollTrigger|AbsenceTrigger|null $trigger): void
+    {
+        $config = $trigger?->toArray() ?? [];
+        if ($config !== $this->triggerConfig) {
+            $this->triggerConfig = $config;
+            // A different poll starts from a fresh baseline.
+            $this->pollState = null;
+            $this->lastPolledAt = null;
+        }
+    }
+
+    /**
+     * Whether a poll is due at $now.
+     */
+    public function isPollDue(\DateTimeImmutable $now): bool
+    {
+        $poll = $this->getPollTrigger();
+
+        return null !== $poll && $this->enabled
+            && (null === $this->lastPolledAt || $this->lastPolledAt->modify(\sprintf('+%d minutes', $poll->intervalMinutes)) <= $now);
+    }
+
+    public function getLastPolledAt(): ?\DateTimeImmutable
+    {
+        return $this->lastPolledAt;
+    }
+
+    /**
+     * @return array{keys?: list<string>, hash?: string}|null
+     */
+    public function getPollState(): ?array
+    {
+        return $this->pollState;
+    }
+
+    /**
+     * @param array{keys?: list<string>, hash?: string} $state
+     */
+    public function setPollState(array $state): void
+    {
+        if (isset($state['keys'])) {
+            $state['keys'] = \array_slice($state['keys'], -self::POLL_MEMORY);
+        }
+        $this->pollState = $state;
     }
 
     public function getDailyTokenBudget(): ?int

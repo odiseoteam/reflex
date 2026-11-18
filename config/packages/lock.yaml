@@ -1,3 +1,0 @@
-framework:
-    # Locks live in Postgres, shared by the app and every worker.
-    lock: 'doctrine.dbal.default_connection'

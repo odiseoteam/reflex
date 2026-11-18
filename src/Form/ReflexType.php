@@ -27,7 +27,7 @@ final class ReflexType extends AbstractType
             ->add('triggerSource', ChoiceType::class, [
                 'label' => 'Trigger',
                 'choices' => array_combine(ReflexInput::SOURCES, ReflexInput::SOURCES),
-                'help' => 'A webhook source, whose events arrive at POST /webhook/{source}, or "schedule".',
+                'help' => 'A webhook source (events arrive at POST /webhook/{source}), a schedule, a poll of an MCP tool, or an absence: X without Y.',
             ])
             ->add('triggerEvent', TextType::class, [
                 'label' => 'Event type',
@@ -38,6 +38,51 @@ final class ReflexType extends AbstractType
                 'required' => false,
                 'attr' => ['placeholder' => '0 9 * * 1'],
                 'help' => 'For "schedule": when it runs, e.g. "0 9 * * 1" for Mondays at 09:00 UTC.',
+            ])
+            ->add('pollConnection', EntityType::class, [
+                'class' => Connection::class,
+                'choice_label' => 'name',
+                'required' => false,
+                'placeholder' => 'Pick a connection',
+                'label' => 'Connection',
+            ])
+            ->add('pollTool', TextType::class, [
+                'label' => 'Tool',
+                'required' => false,
+                'attr' => ['placeholder' => 'list_issues'],
+                'help' => 'Its name on the server. It must be automatic in the policy: nobody approves a poll.',
+            ])
+            ->add('pollArguments', TextareaType::class, [
+                'label' => 'Arguments (JSON)',
+                'required' => false,
+                'attr' => ['rows' => 2, 'placeholder' => '{"state": "open"}'],
+            ])
+            ->add('pollIntervalMinutes', IntegerType::class, ['label' => 'Every (minutes)'])
+            ->add('pollItemKey', TextType::class, [
+                'label' => 'Item id field',
+                'required' => false,
+                'help' => 'Runs on items with an id not seen before. Empty to run whenever the result changes.',
+            ])
+            ->add('absenceSource', ChoiceType::class, [
+                'label' => 'Webhook source',
+                'choices' => array_combine(ReflexInput::WEBHOOK_SOURCES, ReflexInput::WEBHOOK_SOURCES),
+            ])
+            ->add('absenceWhen', TextType::class, [
+                'label' => 'When this happens',
+                'required' => false,
+                'attr' => ['placeholder' => 'email_captured'],
+            ])
+            ->add('absenceMissing', TextType::class, [
+                'label' => 'and this doesn\'t follow',
+                'required' => false,
+                'attr' => ['placeholder' => 'order_completed'],
+            ])
+            ->add('absenceWithinMinutes', IntegerType::class, ['label' => 'within (minutes)'])
+            ->add('absenceCorrelation', TextType::class, [
+                'label' => 'for the same',
+                'required' => false,
+                'attr' => ['placeholder' => 'customer.email'],
+                'help' => 'Dot path into both payloads.',
             ])
             ->add('instructions', TextareaType::class, [
                 'attr' => ['rows' => 8, 'placeholder' => 'Classify new issues, look for duplicates and comment when you find one.'],

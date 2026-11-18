@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Entity\Connection;
+use App\Entity\ConnectionAuth;
 use App\Entity\User;
 use App\Repository\ReflexRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -57,6 +59,47 @@ final class ReflexControllerTest extends WebTestCase
         self::assertNotNull($reflex);
         self::assertTrue($reflex->isScheduled());
         self::assertSame('*', $reflex->getTriggerEvent());
+    }
+
+    public function testCreatesPollAndAbsenceReflexes(): void
+    {
+        $connection = new Connection('Tracker', 'https://tracker.example.com/mcp', ConnectionAuth::None);
+        $this->entityManager->persist($connection);
+        $this->entityManager->flush();
+
+        $this->client->request('GET', '/reflexes/new');
+        $poll = [
+            'reflex[name]' => 'New issues',
+            'reflex[triggerSource]' => 'poll',
+            'reflex[pollConnection]' => $connection->getId()->toRfc4122(),
+            'reflex[pollTool]' => 'list_issues',
+            'reflex[pollArguments]' => '["not", "an object"]',
+            'reflex[pollIntervalMinutes]' => '10',
+            'reflex[instructions]' => 'Triage them.',
+        ];
+        $this->client->submitForm('Save', $poll);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('main form', 'Use a JSON object');
+
+        $this->client->submitForm('Save', ['reflex[pollArguments]' => '{"state": "open"}'] + $poll);
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('main', 'Polls list_issues every 10 min, on new items by id');
+        $reflex = self::getContainer()->get(ReflexRepository::class)->findOneBy(['name' => 'New issues']);
+        self::assertSame(['state' => 'open'], $reflex?->getPollTrigger()?->arguments);
+        self::assertSame([$connection->getId()->toRfc4122()], $reflex->getConnections()->map(static fn (Connection $c): string => $c->getId()->toRfc4122())->getValues(), 'The polled connection is added to the reflex.');
+
+        $this->client->request('GET', '/reflexes/new');
+        $this->client->submitForm('Save', [
+            'reflex[name]' => 'Abandoned checkout',
+            'reflex[triggerSource]' => 'absence',
+            'reflex[absenceWhen]' => 'email_captured',
+            'reflex[absenceMissing]' => 'order_completed',
+            'reflex[absenceWithinMinutes]' => '30',
+            'reflex[absenceCorrelation]' => 'customer.email',
+            'reflex[instructions]' => 'Write to the customer.',
+        ]);
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('main', 'On email_captured without order_completed within 30 min, same customer.email');
     }
 
     public function testAViewerCannotCreateReflexes(): void

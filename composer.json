@@ -31,7 +31,6 @@
         "symfony/flex": "^2",
         "symfony/form": "8.1.*",
         "symfony/framework-bundle": "8.1.*",
-        "symfony/lock": "8.1.*",
         "symfony/mcp-bundle": "dev-main as 1.0.x-dev",
         "symfony/messenger": "8.1.*",
         "symfony/monolog-bundle": "^4.1",

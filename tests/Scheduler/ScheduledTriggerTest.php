@@ -100,6 +100,6 @@ final class ScheduledTriggerTest extends KernelTestCase
     {
         $container = self::getContainer();
 
-        return new ScheduledTrigger($container->get(ReflexRepository::class), $container->get(EventIntake::class), $this->entityManager, $clock);
+        return new ScheduledTrigger($container->get(ReflexRepository::class), $container->get(EventIntake::class), $clock);
     }
 }
