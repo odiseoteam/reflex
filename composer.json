@@ -17,6 +17,7 @@
         "symfony/ai-agent": "dev-main as 1.0.x-dev",
         "symfony/ai-anthropic-platform": "dev-main as 1.0.x-dev",
         "symfony/ai-bundle": "dev-main as 1.0.x-dev",
+        "symfony/ai-doctrine-store": "dev-main as 1.0.x-dev",
         "symfony/ai-generic-platform": "dev-main as 1.0.x-dev",
         "symfony/ai-hugging-face-platform": "dev-main as 1.0.x-dev",
         "symfony/ai-mcp-tool": "dev-main as 1.0.x-dev",

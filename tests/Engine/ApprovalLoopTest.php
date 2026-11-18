@@ -13,11 +13,14 @@ use App\Engine\ToolboxProviderInterface;
 use App\Entity\Decision;
 use App\Entity\DecisionKind;
 use App\Entity\IncomingEvent;
+use App\Entity\Precedent;
 use App\Entity\Reflex;
 use App\Entity\Run;
 use App\Entity\RunStatus;
 use App\Entity\ToolPolicy;
 use App\Entity\User;
+use App\Entity\Verdict;
+use App\Memory\Memory;
 use App\Message\ExecuteDecision;
 use App\Message\RunReflex;
 use App\Repository\DecisionRepository;
@@ -204,6 +207,72 @@ final class ApprovalLoopTest extends KernelTestCase
         self::assertStringContainsString('Use no label.', $this->seen[2]);
     }
 
+    public function testARejectionIsRecalledForTheSameKindOfEventOnly(): void
+    {
+        $this->runner()->run($this->run);
+        $this->desk()->reject($this->decisions()->findPending()[0], $this->alice, 'Not a duplicate, #3 is about another page.');
+
+        $precedent = $this->entityManager->getRepository(Precedent::class)->findOneBy(['reflex' => $this->reflex]);
+        self::assertNotNull($precedent);
+        self::assertSame(Verdict::Rejected, $precedent->getVerdict());
+        self::assertSame('Alice', $precedent->getDecidedBy());
+        self::assertTrue($precedent->hasEmbedding());
+
+        $similar = $this->newRun($this->reflex, ['title' => 'Same as #3']);
+        $prompt = $this->firstPromptOf($similar);
+        self::assertSame([$precedent->getId()->toRfc4122()], $similar->getRecalled());
+        self::assertStringContainsString('<memory>\\n<precedent', $prompt);
+        self::assertStringContainsString('verdict=\"rejected\" by=\"Alice\"', $prompt);
+        self::assertStringContainsString('#3 is about another page', $prompt);
+
+        $unrelated = $this->newRun($this->reflex, ['amount' => 99], 'payment.failed');
+        self::assertStringNotContainsString('<precedent', $this->firstPromptOf($unrelated));
+        self::assertSame([], $unrelated->getRecalled());
+
+        $other = new Reflex('Other', 'generic', '*', 'Close duplicates.');
+        $this->entityManager->persist($other);
+        $elsewhere = $this->newRun($other, ['title' => 'Same as #3']);
+        $this->runner()->run($elsewhere);
+        self::assertSame([], $elsewhere->getRecalled());
+    }
+
+    public function testATwoPersonApprovalRemembersBothNames(): void
+    {
+        $this->reflex->setToolPolicies([], ['tracker_close_issue' => 2]);
+        $this->runner()->run($this->run);
+        $decision = $this->decisions()->findPending()[0];
+        $this->desk()->approve($decision, $this->alice, 'Same stack trace.');
+        $this->desk()->approve($decision, $this->bob);
+
+        $precedent = $this->entityManager->getRepository(Precedent::class)->findOneBy(['decision' => $decision]);
+        self::assertNotNull($precedent);
+        self::assertSame(Verdict::Approved, $precedent->getVerdict());
+        self::assertSame('Alice, Bob', $precedent->getDecidedBy());
+        self::assertSame('Alice: Same stack trace.', $precedent->getNote());
+    }
+
+    private function firstPromptOf(Run $run): string
+    {
+        $before = \count($this->seen);
+        $this->runner()->run($run);
+
+        return $this->seen[$before] ?? '';
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function newRun(Reflex $reflex, array $payload, string $type = 'issue.opened'): Run
+    {
+        $event = new IncomingEvent('generic', 'delivery-'.bin2hex(random_bytes(4)), $type, $payload);
+        $run = new Run($reflex, $event);
+        $this->entityManager->persist($event);
+        $this->entityManager->persist($run);
+        $this->entityManager->flush();
+
+        return $run;
+    }
+
     private function runner(): ReflexRunner
     {
         $container = self::getContainer();
@@ -229,7 +298,7 @@ final class ApprovalLoopTest extends KernelTestCase
             }
         };
 
-        return new ReflexRunner($platform, $toolboxes, $this->entityManager, $container->get(RunRepository::class), $this->decisions(), $serializer, $serializer, new NullLogger());
+        return new ReflexRunner($platform, $toolboxes, $this->entityManager, $container->get(RunRepository::class), $this->decisions(), $serializer, $serializer, $container->get(Memory::class), new NullLogger());
     }
 
     private function desk(): DecisionDesk

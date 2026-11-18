@@ -56,6 +56,10 @@ class Run
     #[ORM\Column]
     private int $segment = 1;
 
+    /** @var list<string> ids of the precedents the agent was given */
+    #[ORM\Column(type: Types::JSON, options: ['jsonb' => true])]
+    private array $recalled = [];
+
     /** @var array<mixed>|null the agent conversation so far, normalized, kept while it waits */
     #[ORM\Column(type: Types::JSON, nullable: true)]
     private ?array $conversation = null;
@@ -168,6 +172,22 @@ class Run
     public function getConversation(): ?array
     {
         return $this->conversation;
+    }
+
+    /**
+     * @param list<string> $ids
+     */
+    public function recall(array $ids): void
+    {
+        $this->recalled = $ids;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getRecalled(): array
+    {
+        return $this->recalled;
     }
 
     /**

@@ -31,6 +31,14 @@
         </section>
     {% endif %}
 
+    {% if recalled is not empty %}
+        <section class="mb-6">
+            <h2 class="mb-1 text-lg font-semibold">Recalled from memory</h2>
+            <p class="mb-2 text-sm text-slate-600">Past decisions on similar events, given to the agent as precedent.</p>
+            {{ include('memory/_precedents.html.twig', {items: recalled}) }}
+        </section>
+    {% endif %}
+
     <section class="mb-6">
         <h2 class="mb-2 text-lg font-semibold">Steps</h2>
         {% if run.steps is empty %}

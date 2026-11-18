@@ -63,6 +63,14 @@
         </section>
     {% endif %}
 
+    {% if precedents is not empty %}
+        <section class="mb-6">
+            <h2 class="mb-1 text-lg font-semibold">Similar past decisions</h2>
+            <p class="mb-2 text-sm text-slate-600">The agent was told about these too.</p>
+            {{ include('memory/_precedents.html.twig', {items: precedents}) }}
+        </section>
+    {% endif %}
+
     {% if decision.kind.value == 'proposal' and (decision.requiredApprovals > 1 or decision.votes|length > 0) %}
         <section class="mb-6 rounded-lg border border-slate-200 bg-white p-4 text-sm">
             <h2 class="mb-2 font-semibold">Votes · {{ decision.countApprovals }} of {{ decision.requiredApprovals }} approvals</h2>

@@ -12,6 +12,7 @@ use App\Form\ReflexInput;
 use App\Form\ReflexType;
 use App\Message\RunReflex;
 use App\Repository\DecisionRepository;
+use App\Repository\PrecedentRepository;
 use App\Repository\ReflexRepository;
 use App\Repository\RunRepository;
 use Doctrine\ORM\EntityManagerInterface;
@@ -31,6 +32,7 @@ final class ReflexController extends AbstractController
         private readonly ReflexRepository $reflexes,
         private readonly RunRepository $runs,
         private readonly DecisionRepository $decisions,
+        private readonly PrecedentRepository $precedents,
         private readonly EntityManagerInterface $entityManager,
         private readonly MessageBusInterface $bus,
     ) {
@@ -74,6 +76,7 @@ final class ReflexController extends AbstractController
             'policies' => ToolPolicy::cases(),
             'runs' => $this->runs->findLatest($reflex),
             'tokensToday' => $this->runs->tokensUsedToday($reflex),
+            'memory' => $this->precedents->findLatest($reflex, 10),
         ]);
     }
 
@@ -141,7 +144,11 @@ final class ReflexController extends AbstractController
     #[Route('/runs/{id}', name: 'app_run_show', requirements: ['id' => Requirement::UUID], methods: ['GET'])]
     public function showRun(Run $run): Response
     {
-        return $this->render('reflex/run.html.twig', ['run' => $run, 'decisions' => $this->decisions->findByRun($run)]);
+        return $this->render('reflex/run.html.twig', [
+            'run' => $run,
+            'decisions' => $this->decisions->findByRun($run),
+            'recalled' => $this->precedents->findInOrder($run->getRecalled()),
+        ]);
     }
 
     /**

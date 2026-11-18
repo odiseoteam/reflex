@@ -8,6 +8,14 @@ framework:
     #esi: true
     #fragments: true
 
+    http_client:
+        scoped_clients:
+            # a slow embeddings server must not hold a decision or a run
+            embeddings.client:
+                base_uri: '%env(EMBEDDINGS_URL)%'
+                timeout: 5
+                max_duration: 10
+
 when@test:
     framework:
         test: true

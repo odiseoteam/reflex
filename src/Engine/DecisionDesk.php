@@ -8,10 +8,12 @@ use App\Entity\ConnectionStatus;
 use App\Entity\Decision;
 use App\Entity\ToolPolicy;
 use App\Entity\User;
+use App\Entity\Verdict;
 use App\Entity\Vote;
 use App\Entity\Waitpoint;
 use App\Mcp\Elicitation\QuestionBox;
 use App\Mcp\McpClientFactory;
+use App\Memory\Memory;
 use App\Message\ExecuteDecision;
 use App\Message\RunReflex;
 use App\Repository\DecisionRepository;
@@ -38,6 +40,7 @@ final readonly class DecisionDesk
         private DecisionRepository $decisions,
         private McpClientFactory $clientFactory,
         private MessageBusInterface $bus,
+        private Memory $memory,
         private LoggerInterface $logger,
     ) {
     }
@@ -64,6 +67,7 @@ final readonly class DecisionDesk
         });
 
         if ($approved) {
+            $this->memory->record($decision, Verdict::Approved, $user);
             $this->bus->dispatch(new ExecuteDecision($decision->getId()->toRfc4122()));
         }
 
@@ -83,6 +87,7 @@ final readonly class DecisionDesk
             $this->workflow->apply($decision, 'reject');
         });
 
+        $this->memory->record($decision, Verdict::Rejected, $user);
         $this->resolveIfDone($decision->getWaitpoint());
     }
 
@@ -95,12 +100,14 @@ final readonly class DecisionDesk
      */
     public function answer(Decision $decision, User $user, array $content): void
     {
+        $question = $decision->getQuestion()?->message;
         $this->whileOpen($decision, 'answer', null, function () use ($decision, $user, $content): void {
             $decision->answer($content);
             $decision->setRespondent($user);
             $this->workflow->apply($decision, 'answer');
         });
 
+        $this->memory->record($decision, Verdict::Answered, $user, $question);
         $this->bus->dispatch(new ExecuteDecision($decision->getId()->toRfc4122()));
     }
 
@@ -117,6 +124,7 @@ final readonly class DecisionDesk
             $this->workflow->apply($decision, 'reject');
         });
 
+        $this->memory->record($decision, Verdict::Declined, $user, $decision->getQuestion()?->message);
         $this->resolveIfDone($decision->getWaitpoint());
     }
 

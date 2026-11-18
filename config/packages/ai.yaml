@@ -2,3 +2,29 @@ ai:
     platform:
         anthropic:
             api_key: '%env(ANTHROPIC_API_KEY)%'
+        generic:
+            # Text Embeddings Inference, Hugging Face's embeddings server
+            embeddings:
+                base_url: '%env(EMBEDDINGS_URL)%'
+                http_client: embeddings.client
+                model_catalog:
+                    models:
+                        'intfloat/multilingual-e5-small':
+                            class: Symfony\AI\Platform\Bridge\Generic\EmbeddingsModel
+                            capabilities: [input-text, input-multiple, embeddings]
+
+    vectorizer:
+        precedents:
+            platform: ai.platform.generic.embeddings
+            model: 'intfloat/multilingual-e5-small'
+
+    store:
+        doctrine:
+            precedents:
+                entity: App\Entity\Precedent
+                vectorizer: ai.vectorizer.precedents
+
+    retriever:
+        precedents:
+            vectorizer: ai.vectorizer.precedents
+            store: ai.store.doctrine.precedents

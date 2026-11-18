@@ -9,6 +9,7 @@ use App\Engine\DecisionDesk;
 use App\Entity\Decision;
 use App\Entity\User;
 use App\Form\QuestionFormFactory;
+use App\Memory\Memory;
 use App\Repository\DecisionRepository;
 use App\Security\DecisionVoter;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
@@ -30,6 +31,7 @@ final class DecisionController extends AbstractController
         private readonly DecisionRepository $decisions,
         private readonly DecisionDesk $desk,
         private readonly QuestionFormFactory $questionForms,
+        private readonly Memory $memory,
     ) {
     }
 
@@ -61,6 +63,7 @@ final class DecisionController extends AbstractController
         return $this->render('decision/show.html.twig', [
             'decision' => $decision,
             'answer_form' => $form,
+            'precedents' => $decision->isPending() ? $this->memory->recallFor($decision) : [],
         ]);
     }
 

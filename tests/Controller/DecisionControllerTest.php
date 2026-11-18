@@ -129,9 +129,25 @@ final class DecisionControllerTest extends WebTestCase
         self::assertSame([$question->key => ['label' => 'duplicate', 'notify' => true, 'priority' => 2]], $decision->getAnswers());
     }
 
+    public function testARejectionShowsUpNextToTheNextSimilarProposal(): void
+    {
+        $this->client->loginUser($this->user('alice@example.com'));
+        $this->client->request('GET', '/decisions/'.$this->proposal()->getId());
+        self::assertSelectorNotExists('main h2:contains("Similar past decisions")');
+        $this->client->submitForm('Reject', ['note' => 'It is not a duplicate.']);
+
+        $this->client->request('GET', '/decisions/'.$this->proposal()->getId());
+        self::assertSelectorTextContains('main', 'Similar past decisions');
+        self::assertSelectorTextContains('main', 'Rejected tracker_close_issue by Alice');
+        self::assertSelectorTextContains('main', 'It is not a duplicate.');
+    }
+
     private function proposal(int $requiredApprovals = 1): Decision
     {
-        $decision = new Decision($this->run, $this->waitpoint, null, 'tracker_close_issue', 'close_issue', ['id' => 7], 'Duplicate of #3.', requiredApprovals: $requiredApprovals);
+        // A request detaches what the test created, so they are reloaded.
+        $run = $this->entityManager->find(Run::class, $this->run->getId()) ?? $this->run;
+        $waitpoint = $this->entityManager->find(Waitpoint::class, $this->waitpoint->getId()) ?? $this->waitpoint;
+        $decision = new Decision($run, $waitpoint, null, 'tracker_close_issue', 'close_issue', ['id' => 7], 'Duplicate of #3.', requiredApprovals: $requiredApprovals);
         $this->entityManager->persist($decision);
         $this->entityManager->flush();
 

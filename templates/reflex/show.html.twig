@@ -82,6 +82,12 @@
         {% endif %}
     </section>
 
+    <section class="mb-8">
+        <h2 class="mb-1 text-lg font-semibold">Memory</h2>
+        <p class="mb-2 text-sm text-slate-600">What people decided on its proposals. Each run is given the closest ones to its event.</p>
+        {{ include('memory/_precedents.html.twig', {items: memory, empty: 'Nothing decided yet.'}) }}
+    </section>
+
     <section>
         <h2 class="mb-3 text-lg font-semibold">Runs</h2>
         {{ include('reflex/_runs.html.twig') }}
