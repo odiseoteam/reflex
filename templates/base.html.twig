@@ -23,6 +23,7 @@
                 </a>
                 <a href="{{ path('app_reflex_index') }}" class="text-sm text-slate-600 hover:text-slate-900">Reflexes</a>
                 <a href="{{ path('app_connection_index') }}" class="text-sm text-slate-600 hover:text-slate-900">Connections</a>
+                <a href="{{ path('app_connected_apps') }}" class="text-sm text-slate-600 hover:text-slate-900">Apps</a>
                 <form method="post" action="{{ logout_path() }}" class="ml-auto flex items-center gap-3 text-sm text-slate-500">
                     <span>{{ app.user.name }}{% if not is_granted('ROLE_ADMIN') %} · viewer{% endif %}</span>
                     <input type="hidden" name="_csrf_token" data-controller="csrf-protection" value="{{ csrf_token('logout') }}">
