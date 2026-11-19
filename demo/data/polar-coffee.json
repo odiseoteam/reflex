@@ -1,0 +1,37 @@
+{
+    "customers": [
+        {"id": "cus_ana", "name": "Ana García", "email": "ana@example.com", "since": "2024-03-02", "subscriber": true, "store_credit": 0},
+        {"id": "cus_bruno", "name": "Bruno Díaz", "email": "bruno@example.com", "since": "2026-11-10", "subscriber": false, "store_credit": 0},
+        {"id": "cus_carla", "name": "Carla Méndez", "email": "carla@example.com", "since": "2025-06-18", "subscriber": false, "store_credit": 0}
+    ],
+    "products": [
+        {"sku": "ETH-250", "name": "Ethiopia Yirgacheffe, 250 g", "price": 14.0},
+        {"sku": "COL-250", "name": "Colombia Huila, 250 g", "price": 12.0},
+        {"sku": "ESP-1KG", "name": "Polar Espresso blend, 1 kg", "price": 38.0},
+        {"sku": "SUB-MONTH", "name": "Monthly subscription, 2 bags", "price": 25.0}
+    ],
+    "orders": [
+        {"id": "PC-1041", "customer": "cus_ana", "items": [{"sku": "SUB-MONTH", "qty": 1}], "total": 25.0, "status": "shipped", "created_at": "2026-10-01T09:12:44Z"},
+        {"id": "PC-1052", "customer": "cus_ana", "items": [{"sku": "SUB-MONTH", "qty": 1}], "total": 25.0, "status": "shipped", "created_at": "2026-11-01T09:10:31Z"},
+        {"id": "PC-1055", "customer": "cus_carla", "items": [{"sku": "ESP-1KG", "qty": 1}, {"sku": "ETH-250", "qty": 1}], "total": 52.0, "status": "shipped", "created_at": "2026-11-12T16:47:03Z"},
+        {"id": "PC-1058", "customer": "cus_bruno", "items": [{"sku": "COL-250", "qty": 2}], "total": 24.0, "status": "shipped", "created_at": "2026-11-14T11:05:19Z"}
+    ],
+    "payments": [
+        {"id": "pay_7731", "order": "PC-1041", "amount": 25.0, "status": "succeeded", "at": "2026-10-01T09:12:51Z"},
+        {"id": "pay_8102", "order": "PC-1052", "amount": 25.0, "status": "succeeded", "at": "2026-11-01T09:10:39Z"},
+        {"id": "pay_8240", "order": "PC-1055", "amount": 52.0, "status": "succeeded", "at": "2026-11-12T16:47:10Z"},
+        {"id": "pay_8311", "order": "PC-1058", "amount": 24.0, "status": "succeeded", "at": "2026-11-14T11:05:25Z"}
+    ],
+    "refunds": [],
+    "coupons": [],
+    "reviews": [
+        {"id": "rev_301", "order": "PC-1052", "customer": "cus_ana", "rating": 5, "text": "Best Yirgacheffe I've had in years.", "at": "2026-11-05T18:22:10Z", "reply": null},
+        {"id": "rev_302", "order": "PC-1058", "customer": "cus_bruno", "rating": 4, "text": "Great coffee, delivery took a bit long.", "at": "2026-11-17T10:41:56Z", "reply": null}
+    ],
+    "tickets": [
+        {"id": "T-501", "customer": "cus_carla", "subject": "Espresso bag arrived torn", "status": "open", "tags": ["shipping"], "created_at": "2026-11-15T08:31:12Z", "messages": [
+            {"from": "customer", "text": "Hi! My 1 kg espresso bag arrived torn and about a third of the beans spilled in the box. Order PC-1055.", "at": "2026-11-15T08:31:12Z"},
+            {"from": "agent", "text": "So sorry, Carla! Could you send us a photo of the bag so we can sort it out?", "at": "2026-11-15T09:02:47Z"}
+        ]}
+    ]
+}

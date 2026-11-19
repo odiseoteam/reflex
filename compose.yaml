@@ -38,6 +38,17 @@ services:
       php:
         condition: service_healthy
 
+  # MCP servers of Polar Coffee, the demo company: http://demo:8090/shop/mcp and /support/mcp
+  demo:
+    image: ${IMAGES_PREFIX:-}reflex-php
+    restart: unless-stopped
+    command: ['php', '-S', '0.0.0.0:8090', 'demo/router.php']
+    environment:
+      PHP_CLI_SERVER_WORKERS: 8
+      DEMO_DATA_DIR: /app/var/demo
+    healthcheck:
+      disable: true
+
   embeddings:
     image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9
     restart: unless-stopped

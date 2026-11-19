@@ -30,6 +30,14 @@ services:
       - ./:/app
       - ./docker/frankenphp/conf.d/20-app.dev.ini:/usr/local/etc/php/app.conf.d/20-app.dev.ini:ro
 
+  demo:
+    build:
+      context: .
+      target: frankenphp_dev
+    user: '${UID:-1000}:${GID:-1000}'
+    volumes:
+      - ./:/app
+
   tailwind:
     build:
       context: .
