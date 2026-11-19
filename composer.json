@@ -12,7 +12,7 @@
         "doctrine/doctrine-migrations-bundle": "^4.0",
         "doctrine/orm": "^3.8",
         "dragonmantank/cron-expression": "^3.6",
-        "mcp/sdk": "^0.10",
+        "mcp/sdk": "dev-client-subscriptions-listen as 0.10.99",
         "nyholm/psr7": "^1.8",
         "symfony/ai-agent": "dev-main as 1.0.x-dev",
         "symfony/ai-anthropic-platform": "dev-main as 1.0.x-dev",
@@ -134,5 +134,11 @@
             "allow-contrib": false,
             "require": "8.1.*"
         }
-    }
+    },
+    "repositories": [
+        {
+            "type": "vcs",
+            "url": "https://github.com/songecko/modelcontextprotocol-php-sdk"
+        }
+    ]
 }

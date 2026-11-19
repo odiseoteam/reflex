@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "cf2a710b750fad70a39e1db82462ffae",
+    "content-hash": "23897ae262729c7a34121ab425db58ee",
     "packages": [
         {
             "name": "composer/semver",
@@ -1287,16 +1287,16 @@
         },
         {
             "name": "mcp/sdk",
-            "version": "v0.10.0",
+            "version": "dev-client-subscriptions-listen",
             "source": {
                 "type": "git",
-                "url": "https://github.com/modelcontextprotocol/php-sdk.git",
-                "reference": "5701e69b3f8dcbaf481f8d1ee28a8796a0b7807f"
+                "url": "https://github.com/songecko/modelcontextprotocol-php-sdk.git",
+                "reference": "e451252e4022c1f7d85431bf502c1eb463b4b361"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/modelcontextprotocol/php-sdk/zipball/5701e69b3f8dcbaf481f8d1ee28a8796a0b7807f",
-                "reference": "5701e69b3f8dcbaf481f8d1ee28a8796a0b7807f",
+                "url": "https://api.github.com/repos/songecko/modelcontextprotocol-php-sdk/zipball/e451252e4022c1f7d85431bf502c1eb463b4b361",
+                "reference": "e451252e4022c1f7d85431bf502c1eb463b4b361",
                 "shasum": ""
             },
             "require": {
@@ -1353,7 +1353,32 @@
                     "Mcp\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
+            "autoload-dev": {
+                "psr-4": {
+                    "Mcp\\Example\\Server\\CachedDiscovery\\": "examples/server/cached-discovery/",
+                    "Mcp\\Example\\Server\\ClientCommunication\\": "examples/server/client-communication/",
+                    "Mcp\\Example\\Server\\ClientLogging\\": "examples/server/client-logging/",
+                    "Mcp\\Example\\Server\\CombinedRegistration\\": "examples/server/combined-registration/",
+                    "Mcp\\Example\\Server\\Elicitation\\": "examples/server/elicitation/",
+                    "Mcp\\Example\\Server\\ComplexToolSchema\\": "examples/server/complex-tool-schema/",
+                    "Mcp\\Example\\Server\\CustomDependencies\\": "examples/server/custom-dependencies/",
+                    "Mcp\\Example\\Server\\CustomMethodHandlers\\": "examples/server/custom-method-handlers/",
+                    "Mcp\\Example\\Server\\DiscoveryCalculator\\": "examples/server/discovery-calculator/",
+                    "Mcp\\Example\\Server\\DiscoveryUserProfile\\": "examples/server/discovery-userprofile/",
+                    "Mcp\\Example\\Server\\EnvVariables\\": "examples/server/env-variables/",
+                    "Mcp\\Example\\Server\\ExplicitRegistration\\": "examples/server/explicit-registration/",
+                    "Mcp\\Example\\Server\\McpApps\\": "examples/server/mcp-apps/",
+                    "Mcp\\Example\\Server\\OAuthKeycloak\\": "examples/server/oauth-keycloak/",
+                    "Mcp\\Example\\Server\\OAuthMicrosoft\\": "examples/server/oauth-microsoft/",
+                    "Mcp\\Example\\Server\\ReactPhp\\": "examples/server/reactphp/",
+                    "Mcp\\Example\\Server\\Revolt\\": "examples/server/revolt/",
+                    "Mcp\\Example\\Server\\SchemaShowcase\\": "examples/server/schema-showcase/",
+                    "Mcp\\Tests\\": "tests/"
+                },
+                "classmap": [
+                    "tests/Unit/Server/Capability/Discovery/Fixtures/AlternativeFileNameToolHandler.class.inc"
+                ]
+            },
             "license": [
                 "Apache-2.0"
             ],
@@ -1373,11 +1398,9 @@
             ],
             "description": "Model Context Protocol SDK for Client and Server applications in PHP",
             "support": {
-                "issues": "https://github.com/modelcontextprotocol/php-sdk/issues",
-                "source": "https://github.com/modelcontextprotocol/php-sdk/tree/v0.10.0"
+                "source": "https://github.com/songecko/modelcontextprotocol-php-sdk/tree/client-subscriptions-listen"
             },
-            "time": "2026-11-10T17:11:02+00:00",
-            "published-time": "2026-11-10T17:17:23+00:00"
+            "time": "2026-11-19T03:36:05+00:00"
         },
         {
             "name": "monolog/monolog",
@@ -13812,6 +13835,12 @@
     ],
     "aliases": [
         {
+            "package": "mcp/sdk",
+            "version": "dev-client-subscriptions-listen",
+            "alias": "0.10.99",
+            "alias_normalized": "0.10.99.0"
+        },
+        {
             "package": "symfony/ai-agent",
             "version": "dev-main",
             "alias": "1.0.x-dev",
@@ -13880,6 +13909,7 @@
     ],
     "minimum-stability": "dev",
     "stability-flags": {
+        "mcp/sdk": 20,
         "symfony/ai-agent": 20,
         "symfony/ai-anthropic-platform": 20,
         "symfony/ai-bundle": 20,

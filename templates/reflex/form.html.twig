@@ -26,6 +26,12 @@
                 {{ form_row(form.pollItemKey) }}
             </div>
         </fieldset>
+        <fieldset data-trigger-for="subscription" class="space-y-4 rounded-md border border-slate-200 p-4">
+            <legend class="px-1 text-sm font-medium text-slate-700">MCP subscription</legend>
+            {{ form_row(form.subscriptionConnection) }}
+            {{ form_row(form.subscriptionUris) }}
+            {{ form_row(form.subscriptionListChanged) }}
+        </fieldset>
         <fieldset data-trigger-for="absence" class="space-y-4 rounded-md border border-slate-200 p-4">
             <legend class="px-1 text-sm font-medium text-slate-700">X without Y</legend>
             <div class="grid gap-4 sm:grid-cols-2">

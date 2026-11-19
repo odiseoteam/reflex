@@ -248,11 +248,13 @@ final readonly class ReflexTools
     {
         $poll = $reflex->getPollTrigger();
         $absence = $reflex->getAbsenceTrigger();
+        $subscription = $reflex->getSubscriptionTrigger();
 
         return match (true) {
             null !== $reflex->getCron() => \sprintf('cron "%s" (UTC)', $reflex->getCron()),
             null !== $poll => \sprintf('polls %s every %d min', $poll->tool, $poll->intervalMinutes),
             null !== $absence => \sprintf('%s without %s within %d min', $absence->whenEvent, $absence->missingEvent, $absence->withinMinutes),
+            null !== $subscription => \sprintf('subscribed to %s%s', implode(', ', $subscription->resourceUris) ?: 'no resources', $subscription->listChanged ? ' and resource list changes' : ''),
             default => \sprintf('%s webhook, event %s', $reflex->getTriggerSource(), $reflex->getTriggerEvent()),
         };
     }

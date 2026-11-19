@@ -7,6 +7,7 @@ namespace App\Entity;
 use App\Repository\ReflexRepository;
 use App\Trigger\AbsenceTrigger;
 use App\Trigger\PollTrigger;
+use App\Trigger\SubscriptionTrigger;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\DBAL\Types\Types;
@@ -29,6 +30,8 @@ class Reflex
     public const string POLL_SOURCE = 'poll';
     /** Trigger source of reflexes that fire when an event doesn't follow another. */
     public const string ABSENCE_SOURCE = 'absence';
+    /** Trigger source of reflexes an MCP server notifies about changed resources. */
+    public const string SUBSCRIPTION_SOURCE = 'subscription';
     /** Item keys a poll remembers, newest last. */
     public const int POLL_MEMORY = 1000;
     public const int DEFAULT_MAX_TOOL_CALLS = 10;
@@ -225,7 +228,12 @@ class Reflex
         return self::ABSENCE_SOURCE === $this->triggerSource && [] !== $this->triggerConfig ? AbsenceTrigger::fromArray($this->triggerConfig) : null;
     }
 
-    public function setTriggerConfig(PollTrigger|AbsenceTrigger|null $trigger): void
+    public function getSubscriptionTrigger(): ?SubscriptionTrigger
+    {
+        return self::SUBSCRIPTION_SOURCE === $this->triggerSource && [] !== $this->triggerConfig ? SubscriptionTrigger::fromArray($this->triggerConfig) : null;
+    }
+
+    public function setTriggerConfig(PollTrigger|AbsenceTrigger|SubscriptionTrigger|null $trigger): void
     {
         $config = $trigger?->toArray() ?? [];
         if ($config !== $this->triggerConfig) {

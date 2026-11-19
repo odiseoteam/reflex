@@ -25,6 +25,19 @@ services:
       php:
         condition: service_healthy
 
+  # Keeps subscriptions/listen streams open to MCP servers for subscription reflexes
+  listener:
+    image: ${IMAGES_PREFIX:-}reflex-php
+    restart: unless-stopped
+    command: ['php', 'bin/console', 'reflex:listen', '-vv']
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-app}:${POSTGRES_PASSWORD:-!ChangeMe!}@database:5432/${POSTGRES_DB:-app}?serverVersion=${POSTGRES_VERSION:-18}&charset=${POSTGRES_CHARSET:-utf8}
+    healthcheck:
+      disable: true
+    depends_on:
+      php:
+        condition: service_healthy
+
   embeddings:
     image: ghcr.io/huggingface/text-embeddings-inference:cpu-1.9
     restart: unless-stopped

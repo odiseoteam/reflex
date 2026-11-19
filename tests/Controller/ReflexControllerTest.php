@@ -102,6 +102,32 @@ final class ReflexControllerTest extends WebTestCase
         self::assertSelectorTextContains('main', 'On email_captured without order_completed within 30 min, same customer.email');
     }
 
+    public function testCreatesASubscriptionReflex(): void
+    {
+        $connection = new Connection('Tracker', 'https://tracker.example.com/mcp', ConnectionAuth::None);
+        $this->entityManager->persist($connection);
+        $this->entityManager->flush();
+
+        $this->client->request('GET', '/reflexes/new');
+        $subscription = [
+            'reflex[name]' => 'Issue 42 changed',
+            'reflex[triggerSource]' => 'subscription',
+            'reflex[subscriptionConnection]' => $connection->getId()->toRfc4122(),
+            'reflex[subscriptionUris]' => '',
+            'reflex[instructions]' => 'Summarise what changed.',
+        ];
+        $this->client->submitForm('Save', $subscription);
+        self::assertResponseStatusCodeSame(422);
+        self::assertSelectorTextContains('main form', 'Name at least one resource');
+
+        $this->client->submitForm('Save', ['reflex[subscriptionUris]' => "tracker://issues/42\n\ntracker://issues/43\n"] + $subscription);
+        $this->client->followRedirect();
+        self::assertSelectorTextContains('main', 'When the server changes 2 resources (tracker://issues/42, …)');
+        $reflex = self::getContainer()->get(ReflexRepository::class)->findOneBy(['name' => 'Issue 42 changed']);
+        self::assertSame(['tracker://issues/42', 'tracker://issues/43'], $reflex?->getSubscriptionTrigger()?->resourceUris);
+        self::assertCount(1, $reflex->getConnections(), 'The subscribed connection is added to the reflex.');
+    }
+
     public function testAViewerCannotCreateReflexes(): void
     {
         $viewer = new User('viewer@example.com', 'Viewer');

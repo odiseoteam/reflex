@@ -7,6 +7,11 @@
 {%- elseif reflex.absenceTrigger %}
     {%- set absence = reflex.absenceTrigger %}
     On <code>{{ absence.whenEvent }}</code> without <code>{{ absence.missingEvent }}</code> within {{ absence.withinMinutes }} min, same <code>{{ absence.correlationPath }}</code> ({{ absence.source }})
+{%- elseif reflex.subscriptionTrigger %}
+    {%- set subscription = reflex.subscriptionTrigger %}
+    When the server changes {{ subscription.resourceUris|length }} {{ subscription.resourceUris|length == 1 ? 'resource' : 'resources' }}
+    {%- if subscription.resourceUris|length > 0 %} (<code>{{ subscription.resourceUris|first }}</code>{{ subscription.resourceUris|length > 1 ? ', …' }}){% endif %}
+    {%- if subscription.listChanged %} or its resource list{% endif %}
 {%- else %}
     On <code>{{ reflex.triggerSource }}</code> · <code>{{ reflex.triggerEvent }}</code>
 {%- endif %}

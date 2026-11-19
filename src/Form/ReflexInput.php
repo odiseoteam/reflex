@@ -8,6 +8,7 @@ use App\Entity\Connection;
 use App\Entity\Reflex;
 use App\Trigger\AbsenceTrigger;
 use App\Trigger\PollTrigger;
+use App\Trigger\SubscriptionTrigger;
 use Cron\CronExpression;
 use Symfony\Component\Validator\Constraints as Assert;
 use Symfony\Component\Validator\Context\ExecutionContextInterface;
@@ -16,7 +17,7 @@ final class ReflexInput
 {
     public const array MODELS = ['claude-sonnet-5-5', 'claude-opus-5-5', 'claude-haiku-5-5'];
     public const array WEBHOOK_SOURCES = ['generic', 'github', 'stripe'];
-    public const array SOURCES = [...self::WEBHOOK_SOURCES, Reflex::SCHEDULE_SOURCE, Reflex::POLL_SOURCE, Reflex::ABSENCE_SOURCE];
+    public const array SOURCES = [...self::WEBHOOK_SOURCES, Reflex::SCHEDULE_SOURCE, Reflex::POLL_SOURCE, Reflex::ABSENCE_SOURCE, Reflex::SUBSCRIPTION_SOURCE];
     private const string EVENT_PATTERN = '/^[A-Za-z0-9_.:-]{1,100}$/';
 
     #[Assert\NotBlank]
@@ -60,6 +61,14 @@ final class ReflexInput
 
     #[Assert\Length(max: 200)]
     public ?string $absenceCorrelation = null;
+
+    public ?Connection $subscriptionConnection = null;
+
+    /** One resource URI per line. */
+    #[Assert\Length(max: 20000)]
+    public ?string $subscriptionUris = null;
+
+    public bool $subscriptionListChanged = false;
 
     #[Assert\NotBlank]
     #[Assert\Length(max: 10000)]
@@ -109,6 +118,16 @@ final class ReflexInput
             $input->absenceWithinMinutes = $absence->withinMinutes;
             $input->absenceCorrelation = $absence->correlationPath;
         }
+        $subscription = $reflex->getSubscriptionTrigger();
+        if (null !== $subscription) {
+            foreach ($reflex->getConnections() as $connection) {
+                if ($connection->getId()->toRfc4122() === $subscription->connectionId) {
+                    $input->subscriptionConnection = $connection;
+                }
+            }
+            $input->subscriptionUris = implode("\n", $subscription->resourceUris);
+            $input->subscriptionListChanged = $subscription->listChanged;
+        }
         $input->instructions = $reflex->getInstructions();
         $input->model = $reflex->getModel();
         $input->enabled = $reflex->isEnabled();
@@ -127,6 +146,9 @@ final class ReflexInput
         if (Reflex::POLL_SOURCE === $this->triggerSource && null !== $this->pollConnection && !\in_array($this->pollConnection, $connections, true)) {
             $connections[] = $this->pollConnection;
         }
+        if (Reflex::SUBSCRIPTION_SOURCE === $this->triggerSource && null !== $this->subscriptionConnection && !\in_array($this->subscriptionConnection, $connections, true)) {
+            $connections[] = $this->subscriptionConnection;
+        }
 
         $reflex->update($this->name, $this->triggerSource, $webhook ? (string) $this->triggerEvent : Reflex::ANY_EVENT, $this->instructions, $this->model, $this->enabled, $connections);
         $reflex->setCron(Reflex::SCHEDULE_SOURCE === $this->triggerSource ? trim((string) $this->cron) : null);
@@ -138,6 +160,7 @@ final class ReflexInput
                 $this->pollIntervalMinutes,
                 '' === trim((string) $this->pollItemKey) ? null : trim((string) $this->pollItemKey),
             ),
+            Reflex::SUBSCRIPTION_SOURCE => new SubscriptionTrigger($this->subscriptionConnection?->getId()->toRfc4122() ?? '', $this->subscriptionUriList(), $this->subscriptionListChanged),
             Reflex::ABSENCE_SOURCE => new AbsenceTrigger($this->absenceSource, trim((string) $this->absenceWhen), trim((string) $this->absenceMissing), $this->absenceWithinMinutes, trim((string) $this->absenceCorrelation)),
             default => null,
         });
@@ -155,6 +178,7 @@ final class ReflexInput
                 : null,
             Reflex::POLL_SOURCE => $this->validatePoll($violation),
             Reflex::ABSENCE_SOURCE => $this->validateAbsence($violation),
+            Reflex::SUBSCRIPTION_SOURCE => $this->validateSubscription($violation),
             default => 1 === preg_match('/^(\*|[A-Za-z0-9_.:-]{1,100})$/', (string) $this->triggerEvent)
                 ? null
                 : $violation('triggerEvent', 'Use an event type such as "issue.opened", or "*" for any.'),
@@ -193,6 +217,40 @@ final class ReflexInput
         if (1 !== preg_match('/^[A-Za-z0-9_-]+(\.[A-Za-z0-9_-]+)*$/', trim((string) $this->absenceCorrelation))) {
             $violation('absenceCorrelation', 'Use a dot path into the payload, e.g. "customer.email".');
         }
+    }
+
+    /**
+     * @param \Closure(string, string): void $violation
+     */
+    private function validateSubscription(\Closure $violation): void
+    {
+        if (null === $this->subscriptionConnection) {
+            $violation('subscriptionConnection', 'Pick the connection whose server notifies the changes.');
+        }
+
+        $uris = $this->subscriptionUriList();
+        if ([] === $uris && !$this->subscriptionListChanged) {
+            $violation('subscriptionUris', 'Name at least one resource, or react to list changes.');
+        }
+        if (\count($uris) > SubscriptionTrigger::MAX_URIS) {
+            $violation('subscriptionUris', \sprintf('Up to %d resources.', SubscriptionTrigger::MAX_URIS));
+        }
+        foreach ($uris as $uri) {
+            if (1 !== preg_match('/^[a-z][a-z0-9+.-]*:\S+$/i', $uri) || \strlen($uri) > 2048) {
+                $violation('subscriptionUris', \sprintf('"%s" is not a resource URI such as "tracker://issues/42".', mb_substr($uri, 0, 80)));
+                break;
+            }
+        }
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function subscriptionUriList(): array
+    {
+        $lines = preg_split('/\R/', (string) $this->subscriptionUris) ?: [];
+
+        return array_values(array_unique(array_filter(array_map(trim(...), $lines), static fn (string $uri): bool => '' !== $uri)));
     }
 
     /**

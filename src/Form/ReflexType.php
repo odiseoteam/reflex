@@ -27,7 +27,7 @@ final class ReflexType extends AbstractType
             ->add('triggerSource', ChoiceType::class, [
                 'label' => 'Trigger',
                 'choices' => array_combine(ReflexInput::SOURCES, ReflexInput::SOURCES),
-                'help' => 'A webhook source (events arrive at POST /webhook/{source}), a schedule, a poll of an MCP tool, or an absence: X without Y.',
+                'help' => 'A webhook source (events arrive at POST /webhook/{source}), a schedule, a poll of an MCP tool, an absence (X without Y), or an MCP subscription: the server says a resource changed.',
             ])
             ->add('triggerEvent', TextType::class, [
                 'label' => 'Event type',
@@ -62,6 +62,24 @@ final class ReflexType extends AbstractType
                 'label' => 'Item id field',
                 'required' => false,
                 'help' => 'Runs on items with an id not seen before. Empty to run whenever the result changes.',
+            ])
+            ->add('subscriptionConnection', EntityType::class, [
+                'class' => Connection::class,
+                'choice_label' => 'name',
+                'required' => false,
+                'placeholder' => 'Pick a connection',
+                'label' => 'Connection',
+                'help' => 'Its server must speak MCP 2026-07-28 and support resource subscriptions.',
+            ])
+            ->add('subscriptionUris', TextareaType::class, [
+                'label' => 'Resources (one URI per line)',
+                'required' => false,
+                'attr' => ['rows' => 3, 'placeholder' => 'tracker://issues/42'],
+                'help' => 'Runs when the server says one of them changed; the run gets its new contents.',
+            ])
+            ->add('subscriptionListChanged', CheckboxType::class, [
+                'label' => 'Also when the server\'s list of resources changes',
+                'required' => false,
             ])
             ->add('absenceSource', ChoiceType::class, [
                 'label' => 'Webhook source',
