@@ -31,6 +31,11 @@ final readonly class Scenarios
 
     private const array CUSTOMERS = ['ana' => 'cus_ana', 'bruno' => 'cus_bruno', 'carla' => 'cus_carla'];
 
+    /** Fixed ids, so a replayed run finds the same orders and reviews it was recorded with. */
+    private const array FAILED_ORDERS = ['cus_ana' => 'PC-1101', 'cus_bruno' => 'PC-1102', 'cus_carla' => 'PC-1103'];
+    private const string PAID_ORDER = 'PC-1201';
+    private const string BAD_REVIEW = 'rev_401';
+
     public function __construct(
         private EventIntake $intake,
         private ReflexRepository $reflexes,
@@ -63,13 +68,14 @@ final readonly class Scenarios
             $customer = Store::find($data['customers'], 'id', $customerId) ?? throw new \LogicException('Unknown customer.');
             $subscriber = true === $customer['subscriber'];
             $order = [
-                'id' => self::nextOrderId($data),
+                'id' => self::FAILED_ORDERS[$customerId],
                 'customer' => $customerId,
                 'items' => [['sku' => $subscriber ? 'SUB-MONTH' : 'ESP-1KG', 'qty' => 1]],
                 'total' => $subscriber ? 25.0 : 38.0,
                 'status' => 'payment_failed',
                 'created_at' => Store::now(),
             ];
+            $data = self::without($data, $order['id']);
             $data['orders'][] = $order;
             $data['payments'][] = ['id' => 'pay_'.random_int(9000, 9999), 'order' => $order['id'], 'amount' => $order['total'], 'status' => 'failed', 'failure' => 'card_declined: insufficient_funds', 'at' => Store::now()];
 
@@ -107,7 +113,8 @@ final readonly class Scenarios
     private function orderPaid(Store $store): string
     {
         $order = $store->change(static function (array $data): array {
-            $order = ['id' => self::nextOrderId($data), 'customer' => 'cus_bruno', 'items' => [['sku' => 'ETH-250', 'qty' => 2]], 'total' => 28.0, 'status' => 'paid', 'created_at' => Store::now()];
+            $data = self::without($data, self::PAID_ORDER);
+            $order = ['id' => self::PAID_ORDER, 'customer' => 'cus_bruno', 'items' => [['sku' => 'ETH-250', 'qty' => 2]], 'total' => 28.0, 'status' => 'paid', 'created_at' => Store::now()];
             $data['orders'][] = $order;
             $data['payments'][] = ['id' => 'pay_'.random_int(9000, 9999), 'order' => $order['id'], 'amount' => 28.0, 'status' => 'succeeded', 'at' => Store::now()];
 
@@ -137,7 +144,8 @@ final readonly class Scenarios
     private function badReview(Store $store): string
     {
         $store->change(static function (array $data): array {
-            $data['reviews'][] = ['id' => 'rev_'.random_int(400, 999), 'order' => 'PC-1058', 'customer' => 'cus_bruno', 'rating' => 1, 'text' => 'Ordered the Colombia twice and the second bag tasted stale, like it sat on a shelf for months.', 'at' => Store::now(), 'reply' => null];
+            $data['reviews'] = array_values(array_filter($data['reviews'], static fn (array $review): bool => self::BAD_REVIEW !== $review['id']));
+            $data['reviews'][] = ['id' => self::BAD_REVIEW, 'order' => 'PC-1058', 'customer' => 'cus_bruno', 'rating' => 1, 'text' => 'Ordered the Colombia twice and the second bag tasted stale, like it sat on a shelf for months.', 'at' => Store::now(), 'reply' => null];
 
             return [$data, null];
         });
@@ -167,12 +175,18 @@ final readonly class Scenarios
     }
 
     /**
+     * The data without an order of a scenario played before, and what belongs to it.
+     *
      * @param array<string, list<array<string, mixed>>> $data
+     *
+     * @return array<string, list<array<string, mixed>>>
      */
-    private static function nextOrderId(array $data): string
+    private static function without(array $data, string $orderId): array
     {
-        $numbers = array_map(static fn (array $order): int => (int) substr(Store::text($order, 'id'), 3), $data['orders']);
+        foreach (['orders' => 'id', 'payments' => 'order', 'refunds' => 'order'] as $table => $key) {
+            $data[$table] = array_values(array_filter($data[$table] ?? [], static fn (array $row): bool => ($row[$key] ?? null) !== $orderId));
+        }
 
-        return 'PC-'.(max([1000, ...$numbers]) + 1);
+        return $data;
     }
 }

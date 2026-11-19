@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Engine;
 
+use App\Engine\Recording\ModelGateway;
 use App\Entity\Decision;
 use App\Entity\DecisionKind;
 use App\Entity\IncomingEvent;
@@ -18,9 +19,7 @@ use Psr\Log\LoggerInterface;
 use Symfony\AI\Agent\Agent;
 use Symfony\AI\Platform\Message\Message;
 use Symfony\AI\Platform\Message\MessageBag;
-use Symfony\AI\Platform\PlatformInterface;
 use Symfony\AI\Platform\TokenUsage\TokenUsageInterface;
-use Symfony\Component\DependencyInjection\Attribute\Target;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
@@ -47,8 +46,7 @@ final readonly class ReflexRunner
         TXT;
 
     public function __construct(
-        #[Target('anthropic')]
-        private PlatformInterface $platform,
+        private ModelGateway $models,
         private ToolboxProviderInterface $toolboxes,
         private EntityManagerInterface $entityManager,
         private RunRepository $runs,
@@ -93,7 +91,10 @@ final readonly class ReflexRunner
             );
             $model = $snapshot['model'];
             \assert('' !== $model);
-            $agent = new Agent($this->platform, $model, toolbox: $toolbox, maxToolCalls: $reflex->getMaxToolCalls());
+            if ($this->models->isReplaying()) {
+                $run->markReplayed();
+            }
+            $agent = new Agent($this->models->for($run), $model, toolbox: $toolbox, maxToolCalls: $reflex->getMaxToolCalls());
 
             $execution = $agent->call($this->conversation($run));
             $output = $execution->asText();

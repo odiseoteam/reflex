@@ -13,13 +13,16 @@
         <div class="mt-1 flex items-center gap-3">
             <h1 class="text-2xl font-semibold">Run</h1>
             {{ include('reflex/_run_status.html.twig', {status: run.status}) }}
+            {% if run.replayed %}
+                <span class="rounded bg-sky-100 px-2 py-0.5 text-xs font-medium text-sky-800" title="No API key is set, so the model's answers come from a recorded run. Tools and decisions are live.">Replayed model</span>
+            {% endif %}
         </div>
         <p class="text-sm text-slate-600">
             {{ run.event ? 'Triggered by ' ~ run.event.source ~ ' · ' ~ run.event.type : 'Manual run' }}
             · created {{ run.createdAt|date('Y-m-d H:i:s') }}
             {% if run.finishedAt %}· finished {{ run.finishedAt|date('H:i:s') }}{% endif %}
             · {{ run.reflexSnapshot.model }}
-            {% if run.tokensUsed is not null %}· {{ run.tokensUsed|number_format }} tokens{% endif %}
+            {% if run.tokensUsed is not null %}· {{ run.tokensUsed|number_format }} tokens{{ run.replayed ? ' when recorded' }}{% endif %}
             {% if run.attempts > 1 %}· resumed {{ run.attempts - 1 }}×{% endif %}
         </p>
     </div>

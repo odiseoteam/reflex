@@ -72,8 +72,8 @@ final class PolarCoffeeTest extends KernelTestCase
 
         $said = $this->scenarios()->play('payment-failed', 'bruno');
 
-        self::assertStringContainsString('Bruno Díaz: the payment of PC-1059 (38.00 EUR) failed', $said);
-        $order = Store::find(Store::fromEnvironment()->read()['orders'], 'id', 'PC-1059');
+        self::assertStringContainsString('Bruno Díaz: the payment of PC-1102 (38.00 EUR) failed', $said);
+        $order = Store::find(Store::fromEnvironment()->read()['orders'], 'id', 'PC-1102');
         self::assertSame('payment_failed', $order['status'] ?? null);
 
         $runs = $this->entityManager->getRepository(Run::class)->findAll();
@@ -92,7 +92,7 @@ final class PolarCoffeeTest extends KernelTestCase
         $this->scenarios()->play('order-paid');
         self::assertSame([], $this->entityManager->getRepository(Run::class)->findAll(), 'It runs only if no shipment follows.');
 
-        self::assertStringContainsString('PC-1059 shipped', $this->scenarios()->play('order-shipped'));
+        self::assertStringContainsString('PC-1201 shipped', $this->scenarios()->play('order-shipped'));
 
         $this->expectException(\InvalidArgumentException::class);
         $this->scenarios()->play('order-shipped');

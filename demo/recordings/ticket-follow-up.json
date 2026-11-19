@@ -1,0 +1,202 @@
+{
+    "resource.updated/1#1": {
+        "type": "toolcall",
+        "tool_calls": [
+            {
+                "id": "toolu_01JYbdgNsJNCktxEKXHhRZJk",
+                "name": "shop_get_order",
+                "arguments": {
+                    "id": "PC-1055"
+                },
+                "signature": null
+            }
+        ],
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "tool-call",
+                "raw": "tool_use"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 4,
+                "completion_tokens": 54,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 3436,
+                "cache_creation_tokens": 975,
+                "cache_read_tokens": 2461,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
+    },
+    "resource.updated/1#2": {
+        "type": "multipart",
+        "parts": [
+            {
+                "type": "thinking",
+                "content": "",
+                "signature": "CAQSugcKEAgUGAI4AUIIdGhpbmtpbmcSDMfmPgDu8o48uOOu+RoMDlkh18tK78FNRZ7MIjBtb8QXBQCOaHgnfLJBZNicog0KELfsQs0Cat5ZWiSxU/dqg9hqndu6emvTuDEvcAQq1wZ0ht47LNO1XoBf4wz25AJCrXgz9lDkqZ5gQOvZ6Ftv9i5HY2Xj16QFKXoQ0/0wqfHb7RoLvz5xnlCCfxLKas/7z2j0YG6KUKgTdrpToyjaeA2xxdNAUVbdjMssz1dl7eReMUWM1A24G9mcxok/x68sPdhkDNu2Bq/FzkhqDRtX258HieAWuj91tq02ap/fBWGGe2w3NFv2StXsz2hXlwfuM6aYVmrxVaev6NEyNIPUq/S4+KTMGAVbcNsbPNjP1CxYJQ+cXxjXGVYMjs5yager0UoHs66Y48u+B8onpMGi0PUkrisuFWkwW22Q1ZfnR4dIPDvjYW078nARpiz7ik0tvyjur34O6f3iV9sJmdYZZDHY7ab6HjgYnc4kq7Mk6R8icy7+ONdnxzFQDMzwOclnA9qR8PrgFerGUN9jufkmfUO4ilUhOBa6DmSAhkO0EFPZD7OmQkYD0kS7c+AdEmTWGEwGikNLwxMGCZ7+rtnY5GxJsbYR7NqvcMGEqVdP+w+OdpmtAW4gbjkWeXlFhSULobCSm6TAXQz9owH67PZNq5QnXbYQqpB9dYZBz2uh8nMXcfxxwyHq0w32P1mFLkdZPJLs/1Ons8mJHh+9FHpRHvXQXvONrcnw9CnHcIXjQz88yr/pTvqezYU42YxphhtATyjrpm8HBMBhVKgqLxvVhLeRsB0GFB9Vr51/fxzucsGJ+skQ/wXC0DCosYrbr8yDKuycOeOuY7Bvfbq5CfCGFmsygp3PKZFJFbtzHEiFkaFW6tS3IdBOOue+Kd/ASvCmrUB91yqx+jFFPcYaDm3D1HCX/rPV/wT4D73Na6PkNxvpDSQWKhRvy1o5vD9hGRRpW9A3gcCe8W0Zi22B6PNLA2TNibmY1lSu4P+YYRGkzk18jd770Oo45WDlPz+rw+CX/3i6/Ph1RTZ9W4QUxX2ft1dVH4tQc2qoj/VkJ8EUl84LT3Tu+JvjfZAHFkb3CWrNXglLPgyuEVzI0lnHMtYdu981Rs3vAPtpCrnWN0yyGkAQJ4Ct/jayrBiWH5MkjIS+QnujPg0FIGmSICUNt2Q8jLcTa7vinglxA/giZHl4fogaonGkNwgBUQlSnGhExICUL0NnhLJTeJ4flpKaI088qrphy9YafLYYAQ=="
+            },
+            {
+                "type": "toolcall",
+                "tool_calls": [
+                    {
+                        "id": "toolu_01DTyW1qVnTG4RGm84NdwkCH",
+                        "name": "shop_find_customer",
+                        "arguments": {
+                            "email": "carla@example.com"
+                        },
+                        "signature": null
+                    }
+                ]
+            }
+        ],
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "tool-call",
+                "raw": "tool_use"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 2,
+                "completion_tokens": 179,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 3689,
+                "cache_creation_tokens": 253,
+                "cache_read_tokens": 3436,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
+    },
+    "resource.updated/1#3": {
+        "type": "multipart",
+        "parts": [
+            {
+                "type": "thinking",
+                "content": "",
+                "signature": "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"
+            },
+            {
+                "type": "toolcall",
+                "tool_calls": [
+                    {
+                        "id": "toolu_012pjaM7qtAbS4g1L6K7igWR",
+                        "name": "shop_refund_order",
+                        "arguments": {
+                            "orderId": "PC-1055",
+                            "amount": 10,
+                            "reason": "Espresso 1 kg bag (ESP-1KG) arrived torn; about 300 g (30%) of the beans spilled. Customer sent a photo.",
+                            "reflex_reason": "Customer reports ~300 g of the 1 kg espresso bag was lost in transit and gave photo evidence. The order data has no per-item prices (total 52 for ESP-1KG + ETH-250), so 10 is my rough estimate of 30% of the espresso price. Please check the amount against the catalogue price and choose card or store credit."
+                        },
+                        "signature": null
+                    }
+                ]
+            },
+            {
+                "type": "toolcall",
+                "tool_calls": [
+                    {
+                        "id": "toolu_012EvWunhgpBUhNpMHvN6kL1",
+                        "name": "support_reply_ticket",
+                        "arguments": {
+                            "ticketId": "T-501",
+                            "message": "Hi Carla,\n\nThank you for the photo, and sorry again that your espresso bag split in transit. We've seen that about 300 g of the 1 kg bag was loose in the box, and we're arranging a refund for the lost part of that item. You'll be able to choose between a refund to your original card or store credit. We'll confirm the amount and the details by email shortly.\n\nYou don't need to send anything else. Enjoy the rest of the coffee!\n\nBest,\nCustomer Care",
+                            "reflex_reason": "Acknowledge the photo and the damage on PC-1055 (order confirmed shipped and paid), and tell the customer a partial refund is coming. The reply doesn't state an amount because the refund still needs approval.",
+                            "status": "pending"
+                        },
+                        "signature": null
+                    }
+                ]
+            }
+        ],
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "tool-call",
+                "raw": "tool_use"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 2,
+                "completion_tokens": 948,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 4010,
+                "cache_creation_tokens": 321,
+                "cache_read_tokens": 3689,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
+    },
+    "resource.updated/1#4": {
+        "type": "text",
+        "content": "I proposed a refund and a reply for ticket T-501. Neither has run yet, because both need a person to approve them.\n\n- **Order check:** PC-1055 belongs to Carla Méndez. It was paid (52) and shipped, with one ESP-1KG and one ETH-250. It has no refunds so far. Her photo and message say about 300 g of the 1 kg espresso bag spilled. She sent the same message three times, which looks like a duplicate upload, not three separate problems.\n- **Refund proposal:** I proposed a partial refund of 10 on PC-1055 for the lost espresso. The order data has no per-item prices, so 10 is my rough estimate of 30% of the espresso price. Please check it against the catalogue price before approving. The approver also picks card or store credit.\n- **Reply proposal:** The reply thanks Carla for the photo and apologises. It says a partial refund is on its way and that she can choose card or store credit. It gives no amount, and it sets the ticket to pending.\n\nI didn't find anything in the ticket that tried to change my instructions.",
+        "signature": null,
+        "phase": null,
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "stop",
+                "raw": "end_turn"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 2,
+                "completion_tokens": 352,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 5111,
+                "cache_creation_tokens": 1101,
+                "cache_read_tokens": 4010,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
+    },
+    "resource.updated/2/shop_refund_order=executed,support_reply_ticket=executed#1": {
+        "type": "text",
+        "content": "Both proposals were approved and have now run on T-501 and order PC-1055.\n\n- **Reply:** The email to Carla went out, and the ticket is now pending.\n- **Refund:** The approver gave her 11.00 EUR in store credit for PC-1055. That is slightly more than my estimate of 10, so the approver presumably corrected it to the real price. Carla's reply promised a choice of card or store credit, but she was given store credit directly. She may expect to be offered the choice. If she asks for the card instead, that will need a new proposal.\n\nI have nothing further to propose.",
+        "signature": null,
+        "phase": null,
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "stop",
+                "raw": "end_turn"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 4,
+                "completion_tokens": 188,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 5872,
+                "cache_creation_tokens": 761,
+                "cache_read_tokens": 5111,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
+    }
+}

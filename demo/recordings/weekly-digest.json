@@ -1,0 +1,96 @@
+{
+    "manual/1#1": {
+        "type": "multipart",
+        "parts": [
+            {
+                "type": "toolcall",
+                "tool_calls": [
+                    {
+                        "id": "toolu_01MAEXdBmChZbgwg1An5gWWG",
+                        "name": "shop_list_orders",
+                        "arguments": {
+                            "limit": 50
+                        },
+                        "signature": null
+                    }
+                ]
+            },
+            {
+                "type": "toolcall",
+                "tool_calls": [
+                    {
+                        "id": "toolu_014ZnuFQSYZPhLBsMGSZbLyz",
+                        "name": "support_list_tickets",
+                        "arguments": {
+                            "status": "open"
+                        },
+                        "signature": null
+                    }
+                ]
+            },
+            {
+                "type": "toolcall",
+                "tool_calls": [
+                    {
+                        "id": "toolu_01Ro74uXUAqotNk2X3nzhuwj",
+                        "name": "shop_list_reviews",
+                        "arguments": {
+                            "limit": 10
+                        },
+                        "signature": null
+                    }
+                ]
+            }
+        ],
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "tool-call",
+                "raw": "tool_use"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 4,
+                "completion_tokens": 150,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 1440,
+                "cache_creation_tokens": 1440,
+                "cache_read_tokens": 0,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
+    },
+    "manual/1#2": {
+        "type": "text",
+        "content": "**Weekly digest (data through 2026-11-19)**\n\n**Orders and revenue**\n- The list returned 6 orders. The last 7 days (from 2026-11-12) hold 4 of them.\n- Revenue in the last 7 days:\n  - Paid or shipped: PC-1201 ($28, paid), PC-1058 ($24, shipped) and PC-1055 ($52, shipped). That is **$104**.\n  - Failed payment: PC-1101 ($25, cus_ana, SUB-MONTH) is not counted.\n- Older orders: PC-1052 ($25, Nov 1) and PC-1041 ($25, Oct 1), both shipped monthly subscriptions for cus_ana.\n- Ana's subscription payment failed this month. She has paid every month before this.\n\n**Open support tickets**\n- None.\n\n**Recent reviews**\n- rev_401, 1 star (Bruno, order PC-1058, Nov 19): says the second Colombia bag tasted stale. No reply yet.\n- rev_302, 4 stars (Bruno, PC-1058, Nov 17): \"Great coffee, delivery took a bit long.\" No reply yet.\n- rev_301, 5 stars (Ana, PC-1052, Nov 5): \"Best Yirgacheffe I've had in years.\" No reply yet.\n- Average rating is 3.3 across 3 reviews. None have a reply.\n\n**Suggested actions**\n1. Reply to Bruno's 1-star review and offer a replacement or refund for the stale Colombia bag. Also check the roast date on that batch (COL-250).\n2. Contact Ana about the failed payment on PC-1101 and ask her to update her payment method, so the subscription doesn't lapse.\n3. Reply to the other two reviews. Thank Ana, and for Bruno's delivery comment, acknowledge it and look at shipping times.\n\n**Summary:** I only read data and changed nothing. I proposed no actions, so nothing is waiting for approval.",
+        "signature": null,
+        "phase": null,
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "stop",
+                "raw": "end_turn"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 2,
+                "completion_tokens": 663,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 2431,
+                "cache_creation_tokens": 991,
+                "cache_read_tokens": 1440,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
+    }
+}

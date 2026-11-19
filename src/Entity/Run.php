@@ -56,6 +56,10 @@ class Run
     #[ORM\Column]
     private int $segment = 1;
 
+    /** The model's answers came from a recording, not the live model. */
+    #[ORM\Column]
+    private bool $replayed = false;
+
     /** @var list<string> ids of the precedents the agent was given */
     #[ORM\Column(type: Types::JSON, options: ['jsonb' => true])]
     private array $recalled = [];
@@ -172,6 +176,16 @@ class Run
     public function getConversation(): ?array
     {
         return $this->conversation;
+    }
+
+    public function markReplayed(): void
+    {
+        $this->replayed = true;
+    }
+
+    public function isReplayed(): bool
+    {
+        return $this->replayed;
     }
 
     /**
