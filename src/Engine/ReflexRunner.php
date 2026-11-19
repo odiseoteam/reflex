@@ -91,7 +91,7 @@ final readonly class ReflexRunner
             );
             $model = $snapshot['model'];
             \assert('' !== $model);
-            if ($this->models->isReplaying()) {
+            if ($this->models->isReplaying($run)) {
                 $run->markReplayed();
             }
             $agent = new Agent($this->models->for($run), $model, toolbox: $toolbox, maxToolCalls: $reflex->getMaxToolCalls());

@@ -39,6 +39,8 @@ class Reflex
     /** Consecutive failed runs that disable a reflex. */
     public const int FAILURE_THRESHOLD = 3;
     public const int MAX_APPROVALS = 5;
+    /** An open model served by Hugging Face Inference Providers. */
+    public const string OPEN_MODEL = 'openai/gpt-oss-120b';
 
     #[ORM\Id]
     #[ORM\Column(type: UuidType::NAME, unique: true)]
@@ -266,6 +268,15 @@ class Reflex
     public function getPollState(): ?array
     {
         return $this->pollState;
+    }
+
+    /**
+     * Starts the poll over: its next result is a new baseline.
+     */
+    public function forgetPoll(): void
+    {
+        $this->pollState = null;
+        $this->lastPolledAt = null;
     }
 
     /**

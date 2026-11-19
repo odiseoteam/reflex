@@ -6,9 +6,13 @@ namespace App\Demo;
 
 use App\Entity\Connection;
 use App\Entity\ConnectionAuth;
+use App\Entity\IncomingEvent;
+use App\Entity\Precedent;
 use App\Entity\Reflex;
+use App\Entity\Run;
 use App\Entity\ToolPolicy;
 use App\Entity\User;
+use App\Entity\Waitpoint;
 use App\Mcp\ConnectionSynchronizer;
 use App\Repository\ConnectionRepository;
 use App\Repository\ReflexRepository;
@@ -31,6 +35,7 @@ final readonly class PolarCoffee
     public const string SHOP = 'Shop';
     public const string SUPPORT = 'Support';
     public const string WATCHED_TICKET = 'support://tickets/T-501';
+    public const array REFLEXES = ['Failed payments', 'Ticket follow-up', 'Paid but not shipped', 'Weekly digest', 'Review watch'];
 
     /** Name, email and whether they decide, not only watch. */
     private const array PEOPLE = [
@@ -78,6 +83,10 @@ final readonly class PolarCoffee
         foreach ([$shop, $support] as $connection) {
             $this->synchronizer->synchronize($connection);
             $status[$connection->getName()] = $connection->getStatus()->value;
+        }
+
+        if ($resetData) {
+            $this->forgetHistory();
         }
 
         $names = [];
@@ -174,6 +183,30 @@ final readonly class PolarCoffee
             [],
             new PollTrigger($shop->getId()->toRfc4122(), 'list_reviews', ['limit' => 10], 1, 'id'),
         ];
+    }
+
+    /**
+     * Back to before anything happened: the demo reflexes' runs and decisions, their memory,
+     * and the events nothing refers to any more.
+     */
+    private function forgetHistory(): void
+    {
+        $reflexes = $this->reflexes->findBy(['name' => self::REFLEXES]);
+        if ([] === $reflexes) {
+            return;
+        }
+
+        foreach ([Run::class, Waitpoint::class, Precedent::class] as $class) {
+            $this->entityManager->createQueryBuilder()->delete($class, 'x')->where('x.reflex IN (:reflexes)')->setParameter('reflexes', $reflexes)->getQuery()->execute();
+        }
+        $this->entityManager->createQueryBuilder()
+            ->delete(IncomingEvent::class, 'e')
+            ->where(\sprintf('NOT EXISTS (SELECT 1 FROM %s r WHERE r.event = e) AND NOT EXISTS (SELECT 1 FROM %s w WHERE w.event = e)', Run::class, Waitpoint::class))
+            ->getQuery()
+            ->execute();
+        foreach ($reflexes as $reflex) {
+            $reflex->forgetPoll();
+        }
     }
 
     private function connection(string $name, string $url): Connection

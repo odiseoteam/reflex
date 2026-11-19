@@ -98,6 +98,23 @@ final class PolarCoffeeTest extends KernelTestCase
         $this->scenarios()->play('order-shipped');
     }
 
+    public function testResettingForgetsWhatHappened(): void
+    {
+        $this->polarCoffee()->install('secret', resetData: true);
+        $this->scenarios()->play('payment-failed');
+        self::assertCount(1, $this->entityManager->getRepository(Run::class)->findAll());
+
+        $this->polarCoffee()->install('secret', resetData: true);
+
+        self::assertSame([], $this->entityManager->getRepository(Run::class)->findAll());
+        self::assertSame([], $this->entityManager->getRepository(IncomingEvent::class)->findAll());
+        self::assertNull(Store::find(Store::fromEnvironment()->read()['orders'], 'id', 'PC-1101'));
+
+        // The same event can come again after a reset.
+        $this->scenarios()->play('payment-failed');
+        self::assertCount(1, $this->entityManager->getRepository(Run::class)->findAll());
+    }
+
     private function reflex(string $name): Reflex
     {
         $reflex = self::getContainer()->get(ReflexRepository::class)->findOneBy(['name' => $name]);

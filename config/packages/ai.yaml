@@ -2,6 +2,9 @@ ai:
     platform:
         anthropic:
             api_key: '%env(ANTHROPIC_API_KEY)%'
+        # Open models through Hugging Face Inference Providers
+        huggingface:
+            api_key: '%env(HF_TOKEN)%'
         generic:
             # Text Embeddings Inference, Hugging Face's embeddings server
             embeddings:

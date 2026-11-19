@@ -299,7 +299,7 @@ final class ApprovalLoopTest extends KernelTestCase
             }
         };
 
-        return new ReflexRunner(new ModelGateway($platform, $this->decisions(), ModelGateway::LIVE, 'test', sys_get_temp_dir()), $toolboxes, $this->entityManager, $container->get(RunRepository::class), $this->decisions(), $serializer, $serializer, $container->get(Memory::class), new NullLogger());
+        return new ReflexRunner(new ModelGateway($platform, $platform, $this->decisions(), ModelGateway::LIVE, 'test', 'test', sys_get_temp_dir()), $toolboxes, $this->entityManager, $container->get(RunRepository::class), $this->decisions(), $serializer, $serializer, $container->get(Memory::class), new NullLogger());
     }
 
     private function desk(): DecisionDesk

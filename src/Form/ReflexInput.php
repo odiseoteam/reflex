@@ -15,7 +15,7 @@ use Symfony\Component\Validator\Context\ExecutionContextInterface;
 
 final class ReflexInput
 {
-    public const array MODELS = ['claude-sonnet-5-5', 'claude-opus-5-5', 'claude-haiku-5-5'];
+    public const array MODELS = ['claude-sonnet-5-5', 'claude-opus-5-5', 'claude-haiku-5-5', Reflex::OPEN_MODEL];
     public const array WEBHOOK_SOURCES = ['generic', 'github', 'stripe'];
     public const array SOURCES = [...self::WEBHOOK_SOURCES, Reflex::SCHEDULE_SOURCE, Reflex::POLL_SOURCE, Reflex::ABSENCE_SOURCE, Reflex::SUBSCRIPTION_SOURCE];
     private const string EVENT_PATTERN = '/^[A-Za-z0-9_.:-]{1,100}$/';
