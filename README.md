@@ -1,7 +1,9 @@
-<h1 align="center">
-    <img src="docs/images/logo.svg" alt="" width="40" height="40" align="center" />
-    Reflex
-</h1>
+<p align="center">
+    <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/logo-dark.png" />
+        <img src="docs/images/logo-light.png" alt="Reflex" width="257" />
+    </picture>
+</p>
 
 <h3 align="center">Your systems change. Reflex acts. You decide.</h3>
 
