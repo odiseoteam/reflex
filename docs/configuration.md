@@ -15,6 +15,12 @@
 
 The `php` container builds the CSS once when it starts.
 
+In development the containers run as user 1000, so they can write `vendor/` and `var/` in your checkout. On Linux, if your user id isn't 1000, start them with yours:
+
+```bash
+env UID=$(id -u) GID=$(id -g) docker compose up --wait
+```
+
 ## Environment variables
 
 Defaults live in `.env`. Put your own values in `.env.local`, which git ignores, then restart with `docker compose restart php worker listener`.

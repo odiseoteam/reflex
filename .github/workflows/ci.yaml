@@ -67,8 +67,9 @@ jobs:
     steps:
       - uses: actions/checkout@v5
 
+      # The containers run as UID:GID (1000 by default) and must own the checkout
       - name: Start the stack
-        run: docker compose up --wait --build
+        run: env UID=$(id -u) GID=$(id -g) docker compose up --wait --build
 
       - name: Check health endpoint
         run: curl --fail --silent --show-error http://localhost:8088/health
