@@ -38,7 +38,7 @@ services:
       php:
         condition: service_healthy
 
-  # MCP servers of Polar Coffee, the demo company: http://demo:8090/shop/mcp and /support/mcp
+  # MCP servers of Polar Coffee Store, the demo company: http://demo:8090/shop/mcp and /support/mcp
   demo:
     image: ${IMAGES_PREFIX:-}reflex-php
     restart: unless-stopped

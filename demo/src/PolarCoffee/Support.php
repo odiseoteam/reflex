@@ -11,7 +11,7 @@ use Mcp\Server\Exception\ResourceReadException;
 use Mcp\Server\Exception\ToolCallException;
 
 /**
- * Polar Coffee's helpdesk: support tickets and their conversations.
+ * Polar Coffee Store's helpdesk: support tickets and their conversations.
  */
 final readonly class Support
 {
@@ -25,8 +25,8 @@ final readonly class Support
         $read = new ToolAnnotations(readOnlyHint: true, openWorldHint: false);
 
         return $builder
-            ->setServerInfo('Polar Coffee Support', '1.0.0')
-            ->setInstructions('The helpdesk of Polar Coffee. Replies are emailed to the customer.')
+            ->setServerInfo('Polar Coffee Store Support', '1.0.0')
+            ->setInstructions('The helpdesk of Polar Coffee Store. Replies are emailed to the customer.')
             ->addTool($this->listTickets(...), name: 'list_tickets', description: 'Tickets by status: open, pending, solved.', annotations: $read)
             ->addTool($this->getTicket(...), name: 'get_ticket', description: 'A ticket with its whole conversation.', annotations: $read)
             ->addTool($this->findTickets(...), name: 'find_tickets', description: 'All tickets of a customer, by email.', annotations: $read)

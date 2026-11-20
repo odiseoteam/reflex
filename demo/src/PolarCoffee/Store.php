@@ -12,7 +12,7 @@ use Symfony\Component\Cache\Adapter\FilesystemAdapter;
 use Symfony\Component\Cache\Psr16Cache;
 
 /**
- * The state of Polar Coffee's shop and helpdesk, a JSON file both demo servers and the
+ * The state of Polar Coffee Store's shop and helpdesk, a JSON file both demo servers and the
  * simulator share. Every change runs under an exclusive lock.
  *
  * @phpstan-type Data array<string, list<array<string, mixed>>>

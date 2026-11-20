@@ -27,7 +27,7 @@ use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 /**
- * Sets up Polar Coffee, the demo company: its people, the connections to its shop and
+ * Sets up Polar Coffee Store, the demo company: its people, the connections to its shop and
  * helpdesk, and a reflex for each kind of trigger. Running it again updates them in place.
  */
 final readonly class PolarCoffee
@@ -58,7 +58,7 @@ final readonly class PolarCoffee
     }
 
     /**
-     * @return array{people: list<string>, connections: array<string, string>, reflexes: list<string>}
+     * @return array{people: list<User>, connections: list<Connection>, reflexes: list<Reflex>}
      */
     public function install(string $password, bool $resetData = false): array
     {
@@ -72,28 +72,26 @@ final readonly class PolarCoffee
             $user->setAdmin($admin);
             $user->setPassword($this->hasher->hashPassword($user, $password));
             $this->entityManager->persist($user);
-            $people[] = $email;
+            $people[] = $user;
         }
 
         $shop = $this->connection(self::SHOP, rtrim($this->demoUrl, '/').'/shop/mcp');
         $support = $this->connection(self::SUPPORT, rtrim($this->demoUrl, '/').'/support/mcp');
         $this->entityManager->flush();
 
-        $status = [];
         foreach ([$shop, $support] as $connection) {
             $this->synchronizer->synchronize($connection);
-            $status[$connection->getName()] = $connection->getStatus()->value;
         }
 
         if ($resetData) {
             $this->forgetHistory();
         }
 
-        $names = [];
+        $reflexes = [];
         $polls = [];
         foreach ($this->definitions($shop, $support) as $definition) {
             $reflex = $this->reflex(...$definition);
-            $names[] = $reflex->getName();
+            $reflexes[] = $reflex;
             if (null !== $reflex->getPollTrigger()) {
                 $polls[] = $reflex;
             }
@@ -105,7 +103,7 @@ final readonly class PolarCoffee
             $this->poller->poll($reflex);
         }
 
-        return ['people' => $people, 'connections' => $status, 'reflexes' => $names];
+        return ['people' => $people, 'connections' => [$shop, $support], 'reflexes' => $reflexes];
     }
 
     /**

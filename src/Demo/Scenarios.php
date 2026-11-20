@@ -15,7 +15,7 @@ use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Uid\Uuid;
 
 /**
- * What happens at Polar Coffee on demand: the shop changes its data and sends the webhook
+ * What happens at Polar Coffee Store on demand: the shop changes its data and sends the webhook
  * a real shop would, or the helpdesk notifies a subscribed ticket.
  */
 final readonly class Scenarios

@@ -15,7 +15,7 @@ use Mcp\Server\Exception\ToolCallException;
 use Mcp\Server\RequestContext;
 
 /**
- * Polar Coffee's online shop: customers, orders, payments, refunds, coupons and reviews.
+ * Polar Coffee Store's online shop: customers, orders, payments, refunds, coupons and reviews.
  */
 final readonly class Shop
 {
@@ -31,8 +31,8 @@ final readonly class Shop
         $read = new ToolAnnotations(readOnlyHint: true, openWorldHint: false);
 
         return $builder
-            ->setServerInfo('Polar Coffee Shop', '1.0.0')
-            ->setInstructions('The online shop of Polar Coffee, a small specialty coffee roaster. Amounts are in EUR.')
+            ->setServerInfo('Polar Coffee Store Shop', '1.0.0')
+            ->setInstructions('The online shop of Polar Coffee Store, a specialty coffee store. Amounts are in EUR.')
             ->addTool($this->findCustomer(...), name: 'find_customer', description: 'A customer by email, with their orders, refunds, coupons and lifetime value.', annotations: $read)
             ->addTool($this->getOrder(...), name: 'get_order', description: 'An order with its items, payments and refunds.', annotations: $read)
             ->addTool($this->listOrders(...), name: 'list_orders', description: 'Latest orders, optionally by status: pending, paid, payment_failed, shipped, refunded.', annotations: $read)

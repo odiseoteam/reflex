@@ -47,8 +47,9 @@ final class PolarCoffeeTest extends KernelTestCase
         $result = $this->polarCoffee()->install('secret', resetData: true);
         $this->polarCoffee()->install('secret');
 
-        self::assertSame(['alice@polarcoffee.test', 'bob@polarcoffee.test', 'vera@polarcoffee.test'], $result['people']);
-        self::assertSame(['Shop' => 'failed', 'Support' => 'failed'], $result['connections'], 'Nothing answers in tests.');
+        self::assertSame(['alice@polarcoffee.test', 'bob@polarcoffee.test', 'vera@polarcoffee.test'], array_map(static fn (User $user): string => $user->getEmail(), $result['people']));
+        self::assertSame(['failed', 'failed'], array_map(static fn (Connection $connection): string => $connection->getStatus()->value, $result['connections']), 'Nothing answers in tests.');
+        self::assertSame(PolarCoffee::REFLEXES, array_map(static fn (Reflex $reflex): string => $reflex->getName(), $result['reflexes']));
         self::assertCount(3, $this->entityManager->getRepository(User::class)->findAll());
         self::assertCount(2, $this->entityManager->getRepository(Connection::class)->findAll());
 

@@ -11,7 +11,7 @@ use Symfony\Component\Console\Attribute\Option;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Style\SymfonyStyle;
 
-#[AsCommand(name: 'reflex:simulate', description: 'Makes something happen at Polar Coffee, the demo company.')]
+#[AsCommand(name: 'reflex:simulate', description: 'Makes something happen at Polar Coffee Store, the demo company.')]
 final readonly class SimulateCommand
 {
     public function __construct(

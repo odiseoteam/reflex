@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-// The MCP servers of Polar Coffee, the demo company: /shop/mcp and /support/mcp.
+// The MCP servers of Polar Coffee Store, the demo company: /shop/mcp and /support/mcp.
 // Served with `php -S` and PHP_CLI_SERVER_WORKERS > 1, since a subscriptions/listen stream holds a worker.
 
 use Demo\PolarCoffee\Shop;
@@ -29,7 +29,7 @@ $system = match ($path) {
 if (null === $system) {
     http_response_code(404);
     header('Content-Type: text/plain');
-    echo "Polar Coffee demo: MCP servers at /shop/mcp and /support/mcp.\n";
+    echo "Polar Coffee Store demo: MCP servers at /shop/mcp and /support/mcp.\n";
 
     return;
 }
