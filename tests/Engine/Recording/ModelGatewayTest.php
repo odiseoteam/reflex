@@ -6,6 +6,7 @@ namespace App\Tests\Engine\Recording;
 
 use App\Engine\Recording\ModelGateway;
 use App\Engine\Recording\RecordedPlatform;
+use App\Entity\IncomingEvent;
 use App\Entity\Reflex;
 use App\Entity\Run;
 use App\Repository\DecisionRepository;
@@ -41,8 +42,38 @@ final class ModelGatewayTest extends KernelTestCase
         self::assertSame(ModelGateway::REPLAY, $gateway->mode(Reflex::OPEN_MODEL));
     }
 
+    public function testRunsByHandOnlyWithTheLiveModelOrARecordingOfOne(): void
+    {
+        $platform = MockPlatformFactory::createPlatform(static fn () => new TextResult(''));
+        $recordings = self::getContainer()->getParameter('kernel.project_dir').'/demo/recordings';
+        $replaying = new ModelGateway($platform, $platform, self::getContainer()->get(DecisionRepository::class), 'auto', '', '', $recordings);
+        $live = new ModelGateway($platform, $platform, self::getContainer()->get(DecisionRepository::class), 'auto', 'sk-key', '', $recordings);
+
+        $digest = new Reflex('Weekly digest', Reflex::SCHEDULE_SOURCE, Reflex::ANY_EVENT, 'x');
+        $payments = new Reflex('Rescue failed payments', 'generic', 'payment.failed', 'x');
+
+        self::assertTrue($replaying->canRunByHand($digest), 'Its run by hand is recorded.');
+        self::assertFalse($replaying->canRunByHand($payments), 'Only its events are recorded.');
+        self::assertTrue($live->canRunByHand($payments));
+    }
+
+    public function testRecordingsOfAnEventAboutACustomerAreKeptPerCustomer(): void
+    {
+        $platform = MockPlatformFactory::createPlatform(static fn () => new TextResult(''));
+        $recordings = self::getContainer()->getParameter('kernel.project_dir').'/demo/recordings';
+        $gateway = new ModelGateway($platform, $platform, self::getContainer()->get(DecisionRepository::class), ModelGateway::REPLAY, '', '', $recordings);
+        $reflex = new Reflex('Rescue failed payments', 'generic', 'payment.failed', 'x');
+
+        $ana = new Run($reflex, new IncomingEvent('generic', 'a', 'payment.failed', ['customer' => ['email' => 'ana@example.com']]));
+        $nobody = new Run($reflex, new IncomingEvent('generic', 'n', 'payment.failed', ['customer' => ['email' => 'nobody@example.com']]));
+
+        self::assertTrue($gateway->for($ana)->invoke(Reflex::DEFAULT_MODEL, 'x')->getResult()->getMetadata()->has('token_usage'), 'Ana\'s first answer is recorded.');
+        $this->expectExceptionMessage('payment.failed[nobody@example.com]/1#1');
+        $gateway->for($nobody)->invoke(Reflex::DEFAULT_MODEL, 'x');
+    }
+
     private function runOf(string $model): Run
     {
-        return new Run(new Reflex('Review watch', Reflex::POLL_SOURCE, Reflex::ANY_EVENT, 'x', $model));
+        return new Run(new Reflex('Reply to bad reviews', Reflex::POLL_SOURCE, Reflex::ANY_EVENT, 'x', $model));
     }
 }

@@ -3,126 +3,140 @@
 {% block title %}Decision · {{ decision.toolName }} · Reflex{% endblock %}
 
 {% block body %}
+    {# Refresh until the approved action runs #}
     {% if decision.status == 'approved' %}
-        <meta http-equiv="refresh" content="2">
+        <div hidden data-controller="auto-refresh"></div>
     {% endif %}
 
     {% set is_question = decision.kind.value == 'question' %}
     {% set json_flags = constant('JSON_PRETTY_PRINT') b-or constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE') %}
 
-    <a href="{{ path('app_inbox') }}" class="text-sm text-slate-600 hover:text-slate-900">← Inbox</a>
-    <div class="mb-6 mt-1 flex flex-wrap items-center gap-3">
-        <h1 class="text-2xl font-semibold"><code>{{ decision.toolName }}</code></h1>
-        {{ include('decision/_status.html.twig', {status: decision.status}) }}
-    </div>
+    <twig:PageHeader title="{{ is_question ? 'A server asks' : 'Proposed action' }}" :crumbs="[{label: 'Decisions', url: path('app_decision_index')}]">
+        <twig:block name="badges">{{ include('decision/_status.html.twig', {status: decision.status}) }}</twig:block>
+        <twig:block name="meta">
+            <p class="mt-1 text-sm text-slate-500">
+                <a class="underline hover:text-ink" href="{{ path('app_run_show', {id: decision.run.id}) }}">{{ decision.run.reflexSnapshot.name }}</a>
+                {{- decision.run.event ? ' · ' ~ include('run/_trigger.html.twig', {run: decision.run}) }}
+                · <twig:Time :at="decision.createdAt" format="datetime-seconds" />
+            </p>
+        </twig:block>
+    </twig:PageHeader>
 
-    <section class="mb-6 rounded-lg border border-slate-200 bg-white p-4">
-        {% if is_question %}
-            <h2 class="mb-1 text-sm font-semibold text-slate-700">The server paused this call to ask for input</h2>
-            <p class="text-sm text-slate-600">The agent ran it automatically; the server needs a person before it can finish.</p>
-        {% else %}
-            <h2 class="mb-1 text-sm font-semibold text-slate-700">Why the agent proposes it</h2>
-            <p class="whitespace-pre-line text-sm">{{ decision.reason }}</p>
-        {% endif %}
-        <p class="mt-3 text-xs text-slate-500">
-            From <a class="underline" href="{{ path('app_run_show', {id: decision.run.id}) }}">a run of {{ decision.run.reflexSnapshot.name }}</a>
-            {{ decision.run.event ? 'on ' ~ decision.run.event.source ~ ' · ' ~ decision.run.event.type }}
-            · {{ decision.createdAt|date('Y-m-d H:i:s') }}
-        </p>
-    </section>
-
-    <section class="mb-6">
-        <h2 class="mb-2 text-lg font-semibold">{{ is_question ? 'The call' : 'What runs if approved' }}</h2>
-        <p class="mb-2 text-sm text-slate-600">
-            Tool <code>{{ decision.remoteToolName }}</code> on {{ decision.connection ? decision.connection.name : 'a removed connection' }}, with exactly these arguments:
-        </p>
-        <pre class="overflow-auto rounded-lg border border-slate-200 bg-white p-4 text-xs">{{ decision.arguments|json_encode(json_flags) }}</pre>
-    </section>
-
-    {% if decision.question %}
-        <section class="mb-6 rounded-lg border border-violet-200 bg-violet-50 p-4">
-            <h2 class="mb-1 text-sm font-semibold text-violet-900">The server asks</h2>
-            <p class="mb-4 whitespace-pre-line text-sm text-violet-950">{{ decision.question.message }}</p>
-            {% if answer_form %}
-                {% form_theme answer_form 'form/tailwind.html.twig' %}
-                {{ form_start(answer_form, {attr: {class: 'space-y-4'}}) }}
-                    {{ form_widget(answer_form) }}
-                    <button class="rounded-md bg-violet-700 px-4 py-2 text-sm font-medium text-white hover:bg-violet-600">Answer and continue</button>
-                {{ form_end(answer_form) }}
-                <form method="post" action="{{ path('app_decision_decline', {id: decision.id}) }}" class="mt-4 flex items-end gap-2 border-t border-violet-200 pt-4">
-                    <input type="hidden" name="_token" value="{{ csrf_token('decide-' ~ decision.id) }}">
-                    <div class="flex-1">
-                        <label class="mb-1 block text-xs font-medium text-violet-900" for="decline-note">Or decline, with a note for the agent</label>
-                        <input id="decline-note" name="note" class="block w-full rounded-md border border-slate-300 px-3 py-1.5 text-sm">
-                    </div>
-                    <button class="rounded-md border border-slate-300 bg-white px-4 py-1.5 text-sm text-slate-700 hover:bg-slate-100">Decline</button>
-                </form>
-            {% else %}
-                <p class="text-sm text-violet-900">Waiting for an admin to answer.</p>
+    <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        <aside class="grid gap-4 lg:sticky lg:top-6 lg:order-2" aria-label="Decide">
+            {% if decision.kind.value == 'proposal' and (decision.requiredApprovals > 1 or decision.votes|length > 0) %}
+                <twig:Panel title="Votes" subtitle="{{ decision.countApprovals }} of {{ decision.requiredApprovals }} approvals">
+                    <ul class="space-y-2 text-sm">
+                        {% for vote in decision.votes %}
+                            <li class="flex flex-wrap items-center gap-2">
+                                <twig:Pill tone="{{ vote.approve ? 'success' : 'danger' }}">{{ vote.approve ? 'Approved' : 'Rejected' }}</twig:Pill>
+                                <span>by {{ vote.user.name }}</span>
+                                <span class="text-xs text-slate-500"><twig:Time :at="vote.createdAt" /></span>
+                                {% if vote.note %}<p class="w-full text-slate-600">“{{ vote.note }}”</p>{% endif %}
+                            </li>
+                        {% else %}
+                            <li class="text-slate-500">No votes yet.</li>
+                        {% endfor %}
+                    </ul>
+                </twig:Panel>
             {% endif %}
-        </section>
-    {% endif %}
 
-    {% if precedents is not empty %}
-        <section class="mb-6">
-            <h2 class="mb-1 text-lg font-semibold">Similar past decisions</h2>
-            <p class="mb-2 text-sm text-slate-600">The agent was told about these too.</p>
-            {{ include('memory/_precedents.html.twig', {items: precedents}) }}
-        </section>
-    {% endif %}
-
-    {% if decision.kind.value == 'proposal' and (decision.requiredApprovals > 1 or decision.votes|length > 0) %}
-        <section class="mb-6 rounded-lg border border-slate-200 bg-white p-4 text-sm">
-            <h2 class="mb-2 font-semibold">Votes · {{ decision.countApprovals }} of {{ decision.requiredApprovals }} approvals</h2>
-            <ul class="space-y-1">
-                {% for vote in decision.votes %}
-                    <li>
-                        <span class="{{ vote.approve ? 'text-emerald-700' : 'text-red-700' }}">{{ vote.approve ? 'Approved' : 'Rejected' }}</span>
-                        by {{ vote.user.name }} · {{ vote.createdAt|date('Y-m-d H:i:s') }}{% if vote.note %}: “{{ vote.note }}”{% endif %}
-                    </li>
+            {% if decision.status == 'proposed' %}
+                {% if is_granted('DECISION_DECIDE', decision) %}
+                    <twig:Panel title="Your decision" subtitle="Approving runs exactly what is shown, without asking the model again.">
+                        <form method="post" class="grid gap-3">
+                            <input type="hidden" name="_token" value="{{ csrf_token('decide-' ~ decision.id) }}">
+                            <div>
+                                <label class="block text-sm font-medium" for="note">Note for the agent <span class="font-normal text-slate-500">(optional)</span></label>
+                                <textarea id="note" name="note" rows="3" class="mt-1.5 block w-full rounded-md border border-hairline px-3 py-2 text-sm focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15"></textarea>
+                            </div>
+                            <div class="flex gap-2">
+                                <twig:Button variant="approve" formaction="{{ path('app_decision_approve', {id: decision.id}) }}" class="flex-1">
+                                    {{- decision.requiredApprovals - decision.countApprovals > 1 ? 'Approve' : 'Approve and run' -}}
+                                </twig:Button>
+                                <twig:Button variant="danger" formaction="{{ path('app_decision_reject', {id: decision.id}) }}" class="flex-1">Reject</twig:Button>
+                            </div>
+                        </form>
+                    </twig:Panel>
                 {% else %}
-                    <li class="text-slate-500">No votes yet.</li>
-                {% endfor %}
-            </ul>
-        </section>
-    {% endif %}
+                    <twig:Panel>
+                        <p class="text-sm text-slate-600">{{ is_granted('ROLE_ADMIN') ? 'You already voted. Waiting for other admins.' : 'Waiting for an admin to decide.' }}</p>
+                    </twig:Panel>
+                {% endif %}
+            {% elseif not decision.pending %}
+                <twig:Panel title="Outcome">
+                    <div class="grid gap-3 text-sm">
+                        <p>
+                            Decided {% if decision.decidedAt %}<twig:Time :at="decision.decidedAt" format="datetime-seconds" />{% endif %}
+                            {%- if decision.respondent %} by {{ decision.respondent.name }}{% endif %}
+                            {%- if decision.note %}: “{{ decision.note }}”{% endif %}
+                        </p>
+                        {% if decision.answers is not empty %}
+                            <div>
+                                <h3 class="mb-1 text-xs font-semibold text-slate-500">Answers given to the server</h3>
+                                {% for answer in decision.answers %}
+                                    <pre class="max-h-48 overflow-auto rounded-lg bg-slate-50 p-3 font-mono text-xs">{{ answer|json_encode(json_flags) }}</pre>
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                        {% if decision.status == 'approved' %}<p class="text-slate-500">Running…</p>{% endif %}
+                        {% if decision.result %}
+                            <div>
+                                <h3 class="mb-1 text-xs font-semibold text-slate-500">Result</h3>
+                                <pre class="max-h-64 overflow-auto whitespace-pre-wrap rounded-lg bg-slate-50 p-3 font-mono text-xs">{{ decision.result }}</pre>
+                            </div>
+                        {% endif %}
+                    </div>
+                </twig:Panel>
+            {% endif %}
+        </aside>
 
-    {% if decision.status == 'proposed' %}
-        {% if is_granted('DECISION_DECIDE', decision) %}
-            <form method="post" class="space-y-3 rounded-lg border border-slate-200 bg-white p-4">
-                <input type="hidden" name="_token" value="{{ csrf_token('decide-' ~ decision.id) }}">
-                <label class="block text-sm font-medium text-slate-700" for="note">Note for the agent (optional)</label>
-                <textarea id="note" name="note" rows="2" class="block w-full rounded-md border border-slate-300 px-3 py-2 text-sm"></textarea>
-                <div class="flex gap-2">
-                    <button formaction="{{ path('app_decision_approve', {id: decision.id}) }}" class="rounded-md bg-emerald-700 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-600">
-                        {{ decision.requiredApprovals - decision.countApprovals > 1 ? 'Approve' : 'Approve and run' }}
-                    </button>
-                    <button formaction="{{ path('app_decision_reject', {id: decision.id}) }}" class="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Reject</button>
-                </div>
-            </form>
-        {% else %}
-            <p class="rounded-lg border border-slate-200 bg-white p-4 text-sm text-slate-600">
-                {{ is_granted('ROLE_ADMIN') ? 'You already voted. Waiting for other admins.' : 'Waiting for an admin to decide.' }}
-            </p>
-        {% endif %}
-    {% elseif not decision.pending %}
-        <section class="space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-sm">
-            <p>
-                Decided {{ decision.decidedAt ? decision.decidedAt|date('Y-m-d H:i:s') }}
-                {%- if decision.respondent %} by {{ decision.respondent.name }}{% endif %}
-                {%- if decision.note %}: “{{ decision.note }}”{% endif %}
-            </p>
-            {% if decision.answers is not empty %}
-                <h3 class="font-semibold">Answers given to the server</h3>
-                {% for answer in decision.answers %}
-                    <pre class="max-h-48 overflow-auto rounded bg-slate-50 p-2 text-xs">{{ answer|json_encode(json_flags) }}</pre>
-                {% endfor %}
+        <div class="grid gap-4 lg:order-1">
+            <twig:Panel title="{{ is_question ? 'Why it paused' : 'Why the agent proposes it' }}">
+                {% if is_question %}
+                    <p class="text-sm text-slate-700">The agent ran this call automatically; the server needs a person before it can finish.</p>
+                {% else %}
+                    <p class="whitespace-pre-line text-sm text-slate-700">{{ decision.reason }}</p>
+                {% endif %}
+            </twig:Panel>
+
+            <twig:Panel title="{{ is_question ? 'The call' : 'What runs if approved' }}">
+                <p class="text-sm text-slate-500">
+                    <code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-ink">{{ decision.remoteToolName }}</code>
+                    on {{ decision.connection ? decision.connection.name : 'a removed connection' }}, with exactly these arguments:
+                </p>
+                <pre class="mt-3 overflow-auto rounded-lg bg-slate-50 p-3 font-mono text-xs">{{ decision.arguments|json_encode(json_flags) }}</pre>
+            </twig:Panel>
+
+            {% if decision.question %}
+                <section class="rounded-xl border border-violet-200 bg-violet-50 px-5 py-4">
+                    <h2 class="font-semibold text-violet-900">The server asks</h2>
+                    <p class="mb-4 mt-1 whitespace-pre-line text-sm text-violet-950">{{ decision.question.message }}</p>
+                    {% if answer_form %}
+                        {% form_theme answer_form 'form/tailwind.html.twig' %}
+                        {{ form_start(answer_form, {attr: {class: 'grid gap-4'}}) }}
+                            {{ form_widget(answer_form) }}
+                            <div><twig:Button variant="primary">Answer and continue</twig:Button></div>
+                        {{ form_end(answer_form) }}
+                        <form method="post" action="{{ path('app_decision_decline', {id: decision.id}) }}" class="mt-4 flex items-end gap-2 border-t border-violet-200 pt-4">
+                            <input type="hidden" name="_token" value="{{ csrf_token('decide-' ~ decision.id) }}">
+                            <div class="flex-1">
+                                <label class="block text-xs font-medium text-violet-900" for="decline-note">Or decline, with a note for the agent</label>
+                                <input id="decline-note" name="note" class="mt-1.5 block w-full rounded-md border border-hairline bg-white px-3 py-1.5 text-sm">
+                            </div>
+                            <twig:Button>Decline</twig:Button>
+                        </form>
+                    {% else %}
+                        <p class="text-sm text-violet-900">Waiting for an admin to answer.</p>
+                    {% endif %}
+                </section>
             {% endif %}
-            {% if decision.status == 'approved' %}<p class="text-slate-600">Running…</p>{% endif %}
-            {% if decision.result %}
-                <h3 class="font-semibold">Result</h3>
-                <pre class="max-h-64 overflow-auto rounded bg-slate-50 p-2 text-xs">{{ decision.result }}</pre>
+
+            {% if precedents is not empty %}
+                <twig:Panel title="Similar past decisions" subtitle="The agent was told about these too.">
+                    {{ include('memory/_precedents.html.twig', {items: precedents}) }}
+                </twig:Panel>
             {% endif %}
-        </section>
-    {% endif %}
+        </div>
+    </div>
 {% endblock %}

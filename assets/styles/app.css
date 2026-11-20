@@ -1,1 +1,25 @@
 @import "tailwindcss";
+
+@theme {
+    --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+    --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+    --color-accent: #2f5bea;
+    --color-accent-soft: #edf2ff;
+    --color-ink: #111318;
+    --color-hairline: #e6e8ec;
+    --color-canvas: #f7f8fa;
+}
+
+/* Model-written markdown, such as an agent's summary */
+@layer components {
+    .markdown { @apply space-y-2 text-sm leading-relaxed text-slate-700; }
+    .markdown :where(h1, h2, h3, h4) { @apply mt-3 font-semibold text-ink; }
+    .markdown :where(ul) { @apply list-disc space-y-1 pl-5; }
+    .markdown :where(ol) { @apply list-decimal space-y-1 pl-5; }
+    .markdown :where(strong) { @apply font-semibold text-ink; }
+    .markdown :where(a) { @apply text-accent underline; }
+    .markdown :where(code) { @apply rounded bg-slate-100 px-1 py-0.5 font-mono text-xs; }
+    .markdown :where(pre) { @apply overflow-auto rounded-lg bg-slate-50 p-3; }
+    .markdown :where(pre code) { @apply bg-transparent p-0; }
+    .markdown :where(blockquote) { @apply border-l-2 border-hairline pl-3 text-slate-500; }
+}

@@ -61,17 +61,35 @@ final class RecordedPlatformTest extends TestCase
         $replay->invoke('claude-sonnet-5-5', 'one call too many');
     }
 
+    public function testFillingAsksTheLiveModelOnlyForWhatIsNotRecorded(): void
+    {
+        $this->platform(MockPlatformFactory::createPlatform(static fn () => new TextResult('recorded')))->invoke('claude-sonnet-5-5', 'first');
+
+        $calls = 0;
+        $live = MockPlatformFactory::createPlatform(static function () use (&$calls): TextResult {
+            ++$calls;
+
+            return new TextResult('filled in');
+        });
+        $filling = new RecordedPlatform($live, $live, new Recordings($this->directory), 'Rescue failed payments', 'payment.failed/1', fill: true);
+
+        self::assertSame('recorded', $filling->invoke('claude-sonnet-5-5', 'x')->getResult()->getContent());
+        self::assertSame('filled in', $filling->invoke('claude-sonnet-5-5', 'x')->getResult()->getContent());
+        self::assertSame(1, $calls);
+        self::assertSame('filled in', (new Recordings($this->directory))->find('Rescue failed payments', 'payment.failed/1#2')['content'] ?? null, 'What was missing is now recorded.');
+    }
+
     public function testAnotherMomentOfTheRunHasItsOwnAnswers(): void
     {
         $this->expectException(NoRecordingException::class);
         $this->expectExceptionMessage('payment.failed/2/shop_issue_coupon=rejected#1');
 
-        (new RecordedPlatform(null, MockPlatformFactory::createPlatform(static fn () => new TextResult('')), new Recordings($this->directory), 'Failed payments', 'payment.failed/2/shop_issue_coupon=rejected'))
+        (new RecordedPlatform(null, MockPlatformFactory::createPlatform(static fn () => new TextResult('')), new Recordings($this->directory), 'Rescue failed payments', 'payment.failed/2/shop_issue_coupon=rejected'))
             ->invoke('claude-sonnet-5-5', 'x');
     }
 
     private function platform(?PlatformInterface $live): RecordedPlatform
     {
-        return new RecordedPlatform($live, MockPlatformFactory::createPlatform(static fn () => new TextResult('')), new Recordings($this->directory), 'Failed payments', 'payment.failed/1');
+        return new RecordedPlatform($live, MockPlatformFactory::createPlatform(static fn () => new TextResult('')), new Recordings($this->directory), 'Rescue failed payments', 'payment.failed/1');
     }
 }

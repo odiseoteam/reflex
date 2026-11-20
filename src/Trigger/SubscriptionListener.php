@@ -8,34 +8,39 @@ use App\Engine\EventIntake;
 use App\Entity\Connection;
 use App\Entity\Reflex;
 use App\Mcp\McpClientFactory;
+use App\Mcp\ResourceReaderInterface;
 use App\Repository\ConnectionRepository;
 use App\Repository\ReflexRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Mcp\Client\CancellationTokenInterface;
-use Mcp\Schema\Content\BlobResourceContents;
-use Mcp\Schema\Content\TextResourceContents;
 use Mcp\Schema\JsonRpc\Notification;
 use Mcp\Schema\Notification\ResourceListChangedNotification;
 use Mcp\Schema\Notification\ResourceUpdatedNotification;
 use Mcp\Schema\SubscriptionFilter;
+use Psr\Cache\CacheItemPoolInterface;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\Uid\Uuid;
 
 /**
  * Turns what an MCP server notifies on a `subscriptions/listen` stream into events of the
  * reflexes subscribed to it.
+ *
+ * A stream only carries what happens while it is open, and servers end streams after a
+ * while. So the listener remembers each watched resource as it last saw it, and when a new
+ * stream opens it reads them again: one that changed in between fires as if notified.
  */
 final readonly class SubscriptionListener
 {
     public const string SOURCE = 'mcp';
-    private const int MAX_CONTENT = 10_000;
 
     public function __construct(
         private ReflexRepository $reflexes,
         private ConnectionRepository $connections,
         private McpClientFactory $clients,
+        private ResourceReaderInterface $resources,
         private EventIntake $intake,
         private EntityManagerInterface $entityManager,
+        private CacheItemPoolInterface $cache,
         private LoggerInterface $logger,
     ) {
     }
@@ -65,7 +70,8 @@ final readonly class SubscriptionListener
     }
 
     /**
-     * Listens until the server ends the subscription or $stop asks to.
+     * Listens until the server ends the subscription or $stop asks to, catching up first on
+     * what changed while no stream was open.
      *
      * @param \Closure(SubscriptionFilter): void|null $onAcknowledged
      */
@@ -78,7 +84,12 @@ final readonly class SubscriptionListener
                 function (Notification $notification) use ($connection): void {
                     $this->dispatch($connection, $notification);
                 },
-                $onAcknowledged,
+                function (SubscriptionFilter $agreed) use ($connection, $onAcknowledged): void {
+                    if (null !== $onAcknowledged) {
+                        $onAcknowledged($agreed);
+                    }
+                    $this->catchUp($connection, $agreed);
+                },
                 $stop,
             );
         } finally {
@@ -102,15 +113,50 @@ final readonly class SubscriptionListener
             return 0;
         }
 
-        $this->entityManager->clear();
-        $connection = $this->connections->find($connection->getId()) ?? $connection;
-
-        $payload = ['connection' => $connection->getName(), 'uri' => $uri];
+        $connection = $this->fresh($connection);
+        $contents = null;
         if (null !== $uri) {
-            $payload['contents'] = $this->read($connection, $uri);
+            $contents = $this->resources->read($connection, $uri);
+            if (\is_array($contents)) {
+                $this->remember($connection, $uri, $contents);
+            }
         }
 
-        // One notification is one event; every subscribed reflex gets its own run of it.
+        return $this->fire($connection, $type, $uri, $contents);
+    }
+
+    /**
+     * Reads the watched resources again and fires for each that differs from how it was
+     * last seen. The first time, it only takes them as they are.
+     *
+     * @return int runs started
+     */
+    public function catchUp(Connection $connection, SubscriptionFilter $agreed): int
+    {
+        $connection = $this->fresh($connection);
+        $started = 0;
+        foreach ($agreed->resourceSubscriptions as $uri) {
+            $contents = $this->resources->read($connection, $uri);
+            if (\is_array($contents) && $this->remember($connection, $uri, $contents)) {
+                $this->logger->info('{uri} on {connection} changed while no stream was open.', ['uri' => $uri, 'connection' => $connection->getName()]);
+                $started += $this->fire($connection, 'resource.updated', $uri, $contents);
+            }
+        }
+
+        return $started;
+    }
+
+    /**
+     * @param list<array{mimeType: string|null, text: string}>|string|null $contents
+     */
+    private function fire(Connection $connection, string $type, ?string $uri, array|string|null $contents): int
+    {
+        $payload = ['connection' => $connection->getName(), 'uri' => $uri];
+        if (null !== $uri) {
+            $payload['contents'] = $contents;
+        }
+
+        // One change is one event; every subscribed reflex gets its own run of it.
         $externalId = Uuid::v7()->toRfc4122();
         $started = 0;
         foreach ($this->reflexes->findEnabledBySource(Reflex::SUBSCRIPTION_SOURCE) as $reflex) {
@@ -133,36 +179,27 @@ final readonly class SubscriptionListener
     }
 
     /**
-     * The resource as it is now, so the agent sees what changed. The listening connection
-     * is busy with the stream, so this reads over another one.
+     * Keeps a fingerprint of the resource as seen now.
      *
-     * @return list<array{mimeType: string|null, text: string}>|string text contents, or why they couldn't be read
+     * @param list<array{mimeType: string|null, text: string}> $contents
+     *
+     * @return bool whether it differs from the one seen before
      */
-    private function read(Connection $connection, string $uri): array|string
+    private function remember(Connection $connection, string $uri, array $contents): bool
     {
-        try {
-            $client = $this->clients->connect($connection);
-            try {
-                $result = $client->readResource($uri);
-            } finally {
-                $client->disconnect();
-            }
-        } catch (\Throwable $e) {
-            $this->logger->warning('Could not read {uri} after its update.', ['uri' => $uri, 'exception' => $e]);
+        $item = $this->cache->getItem('reflex.subscription.'.hash('xxh128', $connection->getId()->toRfc4122().'|'.$uri));
+        $previous = $item->isHit() ? $item->get() : null;
+        $seen = hash('sha256', json_encode($contents, \JSON_THROW_ON_ERROR));
+        $this->cache->save($item->set($seen));
 
-            return 'Could not read it: '.$e->getMessage();
-        }
+        return \is_string($previous) && $previous !== $seen;
+    }
 
-        $contents = [];
-        foreach ($result->contents as $content) {
-            $contents[] = match (true) {
-                $content instanceof TextResourceContents => ['mimeType' => $content->mimeType, 'text' => mb_substr($content->text, 0, self::MAX_CONTENT)],
-                $content instanceof BlobResourceContents => ['mimeType' => $content->mimeType, 'text' => '(binary, not shown)'],
-                default => ['mimeType' => null, 'text' => '(unsupported content)'],
-            };
-        }
+    private function fresh(Connection $connection): Connection
+    {
+        $this->entityManager->clear();
 
-        return $contents;
+        return $this->connections->find($connection->getId()) ?? $connection;
     }
 
     /**

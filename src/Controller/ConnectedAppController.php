@@ -52,7 +52,7 @@ final class ConnectedAppController extends AbstractController
 
         $grant->revoke();
         $this->entityManager->flush();
-        $this->addFlash('success', \sprintf('%s is disconnected; its tokens stopped working.', $grant->getClient()->getName()));
+        $this->addFlash('success', \sprintf('%s is disconnected.', $grant->getClient()->getName()));
 
         return $this->redirectToRoute('app_connected_apps');
     }

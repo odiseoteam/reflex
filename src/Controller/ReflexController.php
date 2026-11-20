@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Engine\Recording\ModelGateway;
 use App\Entity\Reflex;
 use App\Entity\Run;
 use App\Entity\ToolPolicy;
@@ -11,7 +12,6 @@ use App\Entity\User;
 use App\Form\ReflexInput;
 use App\Form\ReflexType;
 use App\Message\RunReflex;
-use App\Repository\DecisionRepository;
 use App\Repository\PrecedentRepository;
 use App\Repository\ReflexRepository;
 use App\Repository\RunRepository;
@@ -31,10 +31,10 @@ final class ReflexController extends AbstractController
     public function __construct(
         private readonly ReflexRepository $reflexes,
         private readonly RunRepository $runs,
-        private readonly DecisionRepository $decisions,
         private readonly PrecedentRepository $precedents,
         private readonly EntityManagerInterface $entityManager,
         private readonly MessageBusInterface $bus,
+        private readonly ModelGateway $models,
     ) {
     }
 
@@ -43,7 +43,7 @@ final class ReflexController extends AbstractController
     {
         return $this->render('reflex/index.html.twig', [
             'reflexes' => $this->reflexes->findAllOrdered(),
-            'runs' => $this->runs->findLatest(limit: 20),
+            'last_runs' => $this->runs->lastRunAtByReflex(),
         ]);
     }
 
@@ -74,9 +74,10 @@ final class ReflexController extends AbstractController
             'reflex' => $reflex,
             'tools' => $this->catalog($reflex),
             'policies' => ToolPolicy::cases(),
-            'runs' => $this->runs->findLatest($reflex),
+            'runs' => $this->runs->findLatest($reflex, 8),
             'tokensToday' => $this->runs->tokensUsedToday($reflex),
             'memory' => $this->precedents->findLatest($reflex, 10),
+            'can_run_by_hand' => $this->models->canRunByHand($reflex),
         ]);
     }
 
@@ -132,6 +133,11 @@ final class ReflexController extends AbstractController
     public function run(Request $request, Reflex $reflex): RedirectResponse
     {
         $this->denyUnlessCsrfValid($request, 'run-'.$reflex->getId());
+        if (!$this->models->canRunByHand($reflex)) {
+            $this->addFlash('error', ModelGateway::NO_RUN_BY_HAND);
+
+            return $this->redirectToRoute('app_reflex_show', ['id' => $reflex->getId()]);
+        }
 
         $run = new Run($reflex);
         $this->entityManager->persist($run);
@@ -139,16 +145,6 @@ final class ReflexController extends AbstractController
         $this->bus->dispatch(new RunReflex($run->getId()->toRfc4122()));
 
         return $this->redirectToRoute('app_run_show', ['id' => $run->getId()]);
-    }
-
-    #[Route('/runs/{id}', name: 'app_run_show', requirements: ['id' => Requirement::UUID], methods: ['GET'])]
-    public function showRun(Run $run): Response
-    {
-        return $this->render('reflex/run.html.twig', [
-            'run' => $run,
-            'decisions' => $this->decisions->findByRun($run),
-            'recalled' => $this->precedents->findInOrder($run->getRecalled()),
-        ]);
     }
 
     /**

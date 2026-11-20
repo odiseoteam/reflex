@@ -109,6 +109,17 @@ final class ApprovalLoopTest extends KernelTestCase
         self::assertStringContainsString('Not a duplicate', $this->seen[2]);
     }
 
+    public function testAReplayedRunWithoutARecordingForTheDecisionsSaysWhatHappened(): void
+    {
+        $this->runner()->run($this->run);
+        $this->desk()->reject($this->decisions()->findPending()[0], $this->alice, 'Not a duplicate.');
+
+        $this->runner(ModelGateway::REPLAY)->run($this->run);
+
+        self::assertSame(RunStatus::Succeeded, $this->run->getStatus());
+        self::assertSame("No recorded answer covers these decisions, so this summary lists what happened without the model.\n\n- **Rejected** `tracker_close_issue`: Not a duplicate.", $this->run->getOutput());
+    }
+
     public function testAnApprovalIsExecutedAsProposedAndFailsWithoutAConnection(): void
     {
         $this->runner()->run($this->run);
@@ -274,7 +285,7 @@ final class ApprovalLoopTest extends KernelTestCase
         return $run;
     }
 
-    private function runner(): ReflexRunner
+    private function runner(string $mode = ModelGateway::LIVE): ReflexRunner
     {
         $container = self::getContainer();
         $platform = MockPlatformFactory::createPlatform(function (Model $model, mixed $input): ToolCallResult|TextResult {
@@ -299,7 +310,7 @@ final class ApprovalLoopTest extends KernelTestCase
             }
         };
 
-        return new ReflexRunner(new ModelGateway($platform, $platform, $this->decisions(), ModelGateway::LIVE, 'test', 'test', sys_get_temp_dir()), $toolboxes, $this->entityManager, $container->get(RunRepository::class), $this->decisions(), $serializer, $serializer, $container->get(Memory::class), new NullLogger());
+        return new ReflexRunner(new ModelGateway($platform, $platform, $this->decisions(), $mode, 'test', 'test', sys_get_temp_dir().'/no-recordings'), $toolboxes, $this->entityManager, $container->get(RunRepository::class), $this->decisions(), $serializer, $serializer, $container->get(Memory::class), new NullLogger());
     }
 
     private function desk(): DecisionDesk

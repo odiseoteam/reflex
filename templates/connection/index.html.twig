@@ -3,36 +3,41 @@
 {% block title %}Connections · Reflex{% endblock %}
 
 {% block body %}
-    <div class="mb-6 flex items-center justify-between">
-        <div>
-            <h1 class="text-2xl font-semibold">Connections</h1>
-            <p class="text-sm text-slate-600">MCP servers Reflex can read from and act on.</p>
-        </div>
+    <twig:PageHeader title="Connections" subtitle="MCP servers Reflex can read from and act on. Their tools are what reflexes can use.">
         {% if is_granted('ROLE_ADMIN') %}
-        <a href="{{ path('app_connection_new') }}" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">Connect a server</a>
+            <twig:Button href="{{ path('app_connection_new') }}" variant="primary">Connect a server</twig:Button>
         {% endif %}
-    </div>
+    </twig:PageHeader>
 
-    {% if connections is empty %}
-        <div class="rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center text-slate-600">
-            No connections yet. Connect an MCP server to give agents its tools.
-        </div>
-    {% else %}
-        <ul class="divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white">
-            {% for connection in connections %}
-                <li>
-                    <a href="{{ path('app_connection_show', {id: connection.id}) }}" class="flex items-center justify-between px-4 py-3 hover:bg-slate-50">
-                        <div>
-                            <div class="font-medium">{{ connection.name }}</div>
-                            <div class="text-sm text-slate-500">{{ connection.url }}</div>
-                        </div>
-                        <div class="flex items-center gap-4 text-sm text-slate-600">
-                            <span>{{ connection.tools|length }} tools</span>
-                            {{ include('connection/_status.html.twig', {status: connection.status}) }}
-                        </div>
-                    </a>
-                </li>
-            {% endfor %}
-        </ul>
-    {% endif %}
+    <twig:Panel flush>
+        {% if connections is empty %}
+            <p class="px-5 py-10 text-center text-sm text-slate-500">No connections yet. Connect an MCP server to give agents its tools.</p>
+        {% else %}
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 text-left text-xs text-slate-500">
+                    <tr>
+                        <th class="px-5 py-2.5 font-medium">Server</th>
+                        <th class="hidden px-5 py-2.5 font-medium md:table-cell">Sign-in</th>
+                        <th class="hidden px-5 py-2.5 text-right font-medium sm:table-cell">Tools</th>
+                        <th class="px-5 py-2.5 font-medium">Status</th>
+                        <th class="py-2.5 pl-2 pr-4"><span class="sr-only">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-hairline">
+                    {% for connection in connections %}
+                        <tr class="hover:bg-slate-50">
+                            <td class="w-full max-w-0 px-5 py-3.5">
+                                <a href="{{ path('app_connection_show', {id: connection.id}) }}" class="font-medium hover:underline">{{ connection.name }}</a>
+                                <div class="truncate font-mono text-xs text-slate-500">{{ connection.url }}</div>
+                            </td>
+                            <td class="hidden whitespace-nowrap px-5 py-3.5 text-slate-500 md:table-cell">{{ connection.auth.label }}</td>
+                            <td class="hidden px-5 py-3.5 text-right tabular-nums sm:table-cell">{{ connection.tools|length }}</td>
+                            <td class="px-5 py-3.5">{{ include('connection/_status.html.twig', {status: connection.status}) }}</td>
+                            <td class="w-px py-3.5 pl-2 pr-4 text-right"><twig:Button href="{{ path('app_connection_show', {id: connection.id}) }}" size="sm">Open</twig:Button></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </twig:Panel>
 {% endblock %}

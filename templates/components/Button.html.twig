@@ -1,0 +1,13 @@
+{# A link when given href, a submit button otherwise #}
+{% props href = null, variant = 'secondary', size = 'md' %}
+{% set variants = {
+    primary: 'border-ink bg-ink text-white hover:bg-slate-800',
+    secondary: 'border-hairline bg-white text-ink hover:bg-slate-50',
+    approve: 'border-emerald-700 bg-emerald-700 text-white hover:bg-emerald-600',
+    danger: 'border-red-200 bg-white text-red-700 hover:bg-red-50',
+} %}
+{% set sizes = {md: 'px-4 py-2 text-sm', sm: 'px-3 py-1.5 text-[13px]'} %}
+{% set tag = href ? 'a' : 'button' %}
+<{{ tag }}{% if href %} href="{{ href }}"{% endif %} {{ attributes.defaults({class: 'inline-flex items-center justify-center gap-1.5 whitespace-nowrap rounded-md border font-medium ' ~ variants[variant] ~ ' ' ~ sizes[size]}) }}>
+    {%- block content %}{% endblock -%}
+</{{ tag }}>

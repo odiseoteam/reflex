@@ -39,12 +39,6 @@ final class ConnectionController extends AbstractController
     ) {
     }
 
-    #[Route('/', name: 'app_home', methods: ['GET'])]
-    public function home(): RedirectResponse
-    {
-        return $this->redirectToRoute('app_reflex_index');
-    }
-
     #[Route('/connections', name: 'app_connection_index', methods: ['GET'])]
     public function index(): Response
     {

@@ -35,10 +35,10 @@ final class DecisionController extends AbstractController
     ) {
     }
 
-    #[Route('/inbox', name: 'app_inbox', methods: ['GET'])]
-    public function inbox(): Response
+    #[Route('/decisions', name: 'app_decision_index', methods: ['GET'])]
+    public function index(): Response
     {
-        return $this->render('decision/inbox.html.twig', [
+        return $this->render('decision/index.html.twig', [
             'pending' => $this->decisions->findPending(),
             'decided' => $this->decisions->findRecentlyDecided(),
         ]);

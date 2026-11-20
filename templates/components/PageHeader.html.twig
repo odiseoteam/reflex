@@ -1,0 +1,28 @@
+{# Title of a page, after a breadcrumb that starts at the dashboard, with badges, a line of facts and actions on the right #}
+{% props title, subtitle = null, crumbs = [], current = null, breadcrumb = true %}
+<div class="mb-6">
+    {% if breadcrumb %}
+        <nav aria-label="Breadcrumb" class="mb-2 text-sm text-slate-500">
+            <ol class="flex flex-wrap items-center gap-x-1.5">
+                <li><a href="{{ path('app_home') }}" class="hover:text-ink">Dashboard</a></li>
+                {% for crumb in crumbs %}
+                    <li aria-hidden="true">/</li>
+                    <li><a href="{{ crumb.url }}" class="hover:text-ink">{{ crumb.label }}</a></li>
+                {% endfor %}
+                <li aria-hidden="true">/</li>
+                <li aria-current="page" class="max-w-full truncate text-ink">{% block current %}{{ current ?? title }}{% endblock %}</li>
+            </ol>
+        </nav>
+    {% endif %}
+    <div class="flex flex-wrap items-start justify-between gap-4">
+        <div class="min-w-0">
+            <div class="flex flex-wrap items-center gap-3">
+                <h1 class="text-[26px] font-semibold tracking-tight">{{ title }}</h1>
+                {% block badges %}{% endblock %}
+            </div>
+            {% if subtitle %}<p class="mt-1 text-sm text-slate-500">{{ subtitle }}</p>{% endif %}
+            {% block meta %}{% endblock %}
+        </div>
+        <div class="flex flex-wrap items-center gap-2">{% block content %}{% endblock %}</div>
+    </div>
+</div>

@@ -1,0 +1,178 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Run · {{ run.reflexSnapshot.name }} · Reflex{% endblock %}
+
+{% block body %}
+    {% set json_flags = constant('JSON_PRETTY_PRINT') b-or constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE') %}
+    {# Refresh until the worker finishes #}
+    {% if run.status.value in ['queued', 'running'] %}
+        <div hidden data-controller="auto-refresh"></div>
+    {% endif %}
+
+    {% set counts = {} %}
+    {% for step in run.steps %}
+        {% set counts = counts|merge({(step.kind.value): (counts[step.kind.value] ?? 0) + 1}) %}
+    {% endfor %}
+
+    <twig:PageHeader title="{{ run.reflexSnapshot.name }}" :crumbs="[{label: 'Runs', url: path('app_run_index')}]" >
+        <twig:block name="current">{{ run.reflexSnapshot.name }} · <twig:Time :at="run.createdAt" /></twig:block>
+        <twig:block name="badges">
+            {{ include('reflex/_run_status.html.twig', {status: run.status}) }}
+            {% if run.replayed %}
+                <twig:Pill tone="info" title="No API key is set, so the model's answers come from a recorded run. Tools and decisions are live.">Replayed model</twig:Pill>
+            {% endif %}
+        </twig:block>
+        <twig:block name="meta">
+            <p class="mt-1 text-sm text-slate-500">
+                {{ include('run/_trigger.html.twig') }}
+                · <twig:Time :at="run.createdAt" format="datetime-seconds" />
+                {% if run.startedAt and run.finishedAt %}· took {{ run.finishedAt|date('U') - run.startedAt|date('U') }} s{% endif %}
+                · {{ run.reflexSnapshot.model }}
+                {% if run.tokensUsed is not null %}· {{ run.tokensUsed|number_format(0, '.', ',') }} tokens{{ run.replayed ? ' when recorded' }}{% endif %}
+                {% if run.attempts > 1 %}· resumed {{ run.attempts - 1 }}×{% endif %}
+            </p>
+        </twig:block>
+        <twig:Button href="{{ path('app_reflex_show', {id: run.reflex.id}) }}" size="sm">Open reflex</twig:Button>
+    </twig:PageHeader>
+
+    {% set dot = {
+        event: 'border-slate-400 bg-white',
+        memory: 'border-violet-500 bg-white',
+        tool_call: 'border-emerald-600 bg-emerald-600',
+        proposal: 'border-amber-500 bg-amber-500',
+        blocked: 'border-red-600 bg-red-600',
+        error: 'border-red-600 bg-white',
+        decision: 'border-accent bg-white',
+        done: 'border-ink bg-ink',
+        wait: 'border-amber-500 bg-white',
+        fail: 'border-red-600 bg-red-600',
+    } %}
+
+    <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        <aside class="grid gap-3 lg:sticky lg:top-6 lg:order-2 lg:max-h-[calc(100vh-3rem)] lg:overflow-y-auto" aria-label="Outcome">
+            {% if run.error %}
+                <div class="rounded-xl border border-red-200 bg-red-50 px-5 py-4">
+                    <h2 class="font-semibold text-red-800">{{ run.status.value == 'skipped' ? 'Skipped' : 'Failed' }}</h2>
+                    <p class="text-sm text-red-800">{{ run.error }}</p>
+                </div>
+            {% elseif run.status.value == 'waiting' %}
+                <div class="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
+                    <h2 class="font-semibold text-amber-900">Waiting for people</h2>
+                    <p class="text-sm text-amber-900">The run resumes once every proposal is decided. <a class="underline" href="{{ path('app_decision_index') }}">Go to decisions</a></p>
+                    {% if run.output %}<div class="markdown mt-3 rounded-lg bg-white/60 p-3">{{ run.output|markdown_to_html }}</div>{% endif %}
+                </div>
+            {% elseif run.output %}
+                <div class="rounded-xl border border-hairline bg-white px-5 py-4">
+                    <h2 class="font-semibold">Agent summary</h2>
+                    <div class="markdown mt-1">{{ run.output|markdown_to_html }}</div>
+                </div>
+            {% else %}
+                <div class="rounded-xl border border-dashed border-hairline bg-white px-5 py-4 text-sm text-slate-500">Running…</div>
+            {% endif %}
+            <div class="grid grid-cols-2 gap-3">
+                {% for item in [
+                    {kind: 'tool_call', label: 'Ran on their own', hint: 'automatic in the policy', tone: 'text-emerald-700'},
+                    {kind: 'proposal', label: 'Proposed', hint: 'waiting on a person', tone: 'text-amber-700'},
+                    {kind: 'blocked', label: 'Blocked', hint: 'outside the policy', tone: 'text-red-700'},
+                    {kind: 'error', label: 'Failed', hint: 'tool errors', tone: 'text-red-700'},
+                ] %}
+                    {% set count = counts[item.kind] ?? 0 %}
+                    <div class="rounded-xl border bg-white px-4 py-3 {{ item.kind == 'blocked' and count > 0 ? 'border-red-200 bg-red-50/40' : 'border-hairline' }}">
+                        <div class="text-xs text-slate-500">{{ item.label }}</div>
+                        <div class="text-2xl font-semibold tabular-nums {{ count > 0 ? item.tone : 'text-slate-300' }}">{{ count }}</div>
+                        <div class="text-xs text-slate-500">{{ item.hint }}</div>
+                    </div>
+                {% endfor %}
+            </div>
+        </aside>
+
+        <div class="lg:order-1">
+            <ol class="relative space-y-4 before:absolute before:bottom-3 before:left-[7px] before:top-3 before:w-px before:bg-hairline">
+                {% if run.event %}
+                    <li class="relative pl-8">
+                        <span class="absolute left-0 top-4 size-[15px] rounded-full border-2 {{ dot.event }}" aria-hidden="true"></span>
+                        <div class="rounded-xl border border-hairline bg-white px-5 py-4">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h2 class="font-semibold">Event received</h2>
+                                <span class="rounded-full bg-slate-100 px-2 py-0.5 text-xs font-medium text-slate-600" title="The agent is told this is data to analyse, never instructions.">untrusted data</span>
+                                <span class="ml-auto font-mono text-xs text-slate-500"><twig:Time :at="run.event.receivedAt" format="time-seconds" /></span>
+                            </div>
+                            <p class="text-sm text-slate-500">{{ include('run/_trigger.html.twig') }}{{ run.event.source not in ['poll', 'schedule', 'absence', 'mcp', 'subscription'] ? ' from ' ~ run.event.source }}</p>
+                            <pre class="mt-3 max-h-72 overflow-auto rounded-lg bg-slate-50 p-3 font-mono text-xs">{{ run.event.payload|json_encode(json_flags) }}</pre>
+                        </div>
+                    </li>
+                {% endif %}
+
+                {% if recalled is not empty %}
+                    <li class="relative pl-8">
+                        <span class="absolute left-0 top-4 size-[15px] rounded-full border-2 {{ dot.memory }}" aria-hidden="true"></span>
+                        <div class="rounded-xl border border-hairline bg-white px-5 py-4">
+                            <h2 class="font-semibold">Recalled from memory</h2>
+                            <p class="mb-3 text-sm text-slate-500">Past decisions on similar cases, given to the agent as precedent.</p>
+                            {{ include('memory/_precedents.html.twig', {items: recalled}) }}
+                        </div>
+                    </li>
+                {% endif %}
+
+                {% set step_text = {
+                    tool_call: {verb: 'Ran', note: 'Automatic in the policy, so it ran without asking.'},
+                    proposal: {verb: 'Proposed', note: 'Needs approval, so it was recorded for a person instead of running.'},
+                    blocked: {verb: 'Blocked', note: 'Not in the policy: the agent asked for a tool it is not allowed to use.'},
+                    error: {verb: 'Failed', note: 'The tool returned an error.'},
+                } %}
+                {% set entries = run.steps.toArray|map(step => {at: step.createdAt, step: step, decision: null})
+                    |merge(decisions|map(decision => {at: decision.decidedAt ?? decision.createdAt, step: null, decision: decision}))
+                    |sort((a, b) => a.at <=> b.at) %}
+                {% for entry in entries %}
+                    {% if entry.step %}
+                    {% set step = entry.step %}
+                        {% set blocked = step.kind.value == 'blocked' %}
+                        <li class="relative pl-8">
+                            <span class="absolute left-0 top-4 size-[15px] rounded-full border-2 {{ dot[step.kind.value] }}" aria-hidden="true"></span>
+                            <div class="rounded-xl border px-5 py-4 {{ blocked ? 'border-red-200 bg-red-50' : 'border-hairline bg-white' }}">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <h2 class="font-semibold {{ blocked ? 'text-red-800' }}">{{ step_text[step.kind.value].verb }}</h2>
+                                    <code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-700">{{ step.toolName }}</code>
+                                    <span class="ml-auto font-mono text-xs text-slate-500"><twig:Time :at="step.createdAt" format="time-seconds" /></span>
+                                </div>
+                                <p class="text-sm {{ blocked ? 'text-red-700' : 'text-slate-500' }}">{{ step_text[step.kind.value].note }}</p>
+                                {% if step.arguments is not empty %}
+                                    <pre class="mt-3 overflow-auto rounded-lg bg-slate-50 p-3 font-mono text-xs">{{ step.arguments|json_encode(json_flags) }}</pre>
+                                {% endif %}
+                                {% if step.result %}
+                                    <details class="mt-2">
+                                        <summary class="cursor-pointer text-xs font-medium text-slate-600">{{ step.kind.value == 'proposal' ? 'Reason' : 'Result' }}</summary>
+                                        <pre class="mt-1 max-h-64 overflow-auto whitespace-pre-wrap rounded-lg bg-slate-50 p-3 font-mono text-xs">{{ step.result }}</pre>
+                                    </details>
+                                {% endif %}
+                            </div>
+                        </li>
+                    {% else %}
+                    {% set decision = entry.decision %}
+                        <li class="relative pl-8">
+                            <span class="absolute left-0 top-4 size-[15px] rounded-full border-2 {{ dot.decision }}" aria-hidden="true"></span>
+                            <div class="rounded-xl border border-hairline bg-white px-5 py-4">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <h2 class="font-semibold">{{ decision.question ? 'Server asked' : 'Decision' }}</h2>
+                                    <code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-700">{{ decision.toolName }}</code>
+                                    {{ include('decision/_status.html.twig', {status: decision.status}) }}
+                                    <span class="ml-auto font-mono text-xs text-slate-500"><twig:Time :at="decision.decidedAt ?? decision.createdAt" format="time-seconds" /></span>
+                                </div>
+                                <p class="text-sm text-slate-700">{{ decision.question ? decision.question.message : decision.reason }}</p>
+                                {% set voters = decision.votes|map(vote => vote.user.name ~ (vote.approve ? ' approved' : ' rejected')) %}
+                                <p class="mt-1 text-xs text-slate-500">
+                                    {% if voters is not empty %}{{ voters|join(', ') }}{% elseif decision.pending %}Waiting for a person{% endif %}
+                                    {% if decision.note %}· “{{ decision.note }}”{% endif %}
+                                </p>
+                                <a href="{{ path('app_decision_show', {id: decision.id}) }}" class="mt-2 inline-block text-[13px] font-medium text-accent hover:underline">{{ decision.pending ? 'Decide' : 'View decision' }}</a>
+                            </div>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+            </ol>
+            {% if run.event is null and recalled is empty and entries is empty %}
+                <p class="rounded-xl border border-dashed border-hairline bg-white px-5 py-4 text-sm text-slate-500">No tool calls{{ run.status.finished ? '.' : ' yet…' }}</p>
+            {% endif %}
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,6 @@
+{# The name of a reflex as a label, with a bolt icon #}
+{% props name %}
+<span {{ attributes.defaults({class: 'inline-flex max-w-full items-center gap-1 rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-semibold text-ink'}) }}>
+    <svg class="shrink-0 text-accent" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 3v7h6l-8 11v-7H5l8-11"/></svg>
+    <span class="truncate">{{ name }}</span>
+</span>

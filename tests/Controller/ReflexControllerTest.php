@@ -4,11 +4,16 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Engine\Recording\ModelGateway;
 use App\Entity\Connection;
 use App\Entity\ConnectionAuth;
+use App\Entity\Reflex;
 use App\Entity\User;
+use App\Repository\DecisionRepository;
 use App\Repository\ReflexRepository;
 use Doctrine\ORM\EntityManagerInterface;
+use Symfony\AI\Platform\Result\TextResult;
+use Symfony\AI\Platform\Test\MockPlatformFactory;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
@@ -59,6 +64,20 @@ final class ReflexControllerTest extends WebTestCase
         self::assertNotNull($reflex);
         self::assertTrue($reflex->isScheduled());
         self::assertSame('*', $reflex->getTriggerEvent());
+    }
+
+    public function testDoesNotOfferRunningByHandWhatOnlyHasRecordedEvents(): void
+    {
+        $reflex = new Reflex('Rescue failed payments', 'generic', 'payment.failed', 'Look the customer up.');
+        $this->entityManager->persist($reflex);
+        $this->entityManager->flush();
+
+        $platform = MockPlatformFactory::createPlatform(static fn () => new TextResult(''));
+        self::getContainer()->set(ModelGateway::class, new ModelGateway($platform, $platform, self::getContainer()->get(DecisionRepository::class), 'auto', '', '', self::getContainer()->getParameter('kernel.project_dir').'/demo/recordings'));
+
+        $this->client->request('GET', '/reflexes/'.$reflex->getId());
+        self::assertSelectorExists('button[disabled]:contains("Run now")');
+        self::assertSelectorExists('[title^="Runs on its events only"]');
     }
 
     public function testCreatesPollAndAbsenceReflexes(): void

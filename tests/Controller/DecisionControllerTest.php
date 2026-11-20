@@ -51,7 +51,7 @@ final class DecisionControllerTest extends WebTestCase
 
     public function testSignInIsRequired(): void
     {
-        $this->client->request('GET', '/inbox');
+        $this->client->request('GET', '/decisions');
 
         self::assertResponseRedirects('/login');
     }
@@ -66,7 +66,7 @@ final class DecisionControllerTest extends WebTestCase
         $this->client->request('GET', '/login');
         $this->client->submitForm('Sign in', ['_username' => 'carol@example.com', '_password' => 'correct horse']);
 
-        self::assertResponseRedirects('/inbox');
+        self::assertResponseRedirects('/');
     }
 
     public function testAViewerSeesButCannotDecide(): void

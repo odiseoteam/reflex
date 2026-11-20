@@ -149,7 +149,7 @@ final class McpServerTest extends WebTestCase
         $tokens = $this->connect($this->alice);
 
         $this->client->request('GET', '/apps');
-        self::assertSelectorTextContains('main li', 'Test client');
+        self::assertSelectorTextContains('main section li', 'Test client');
         $this->client->submitForm('Disconnect');
         $this->client->followRedirect();
         self::assertSelectorTextContains('main', 'No apps connected.');

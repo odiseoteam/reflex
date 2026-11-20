@@ -1,31 +1,26 @@
-{# items: Precedent or Recollection (a precedent with its distance) #}
-{% set verdict_classes = {
-    approved: 'bg-emerald-100 text-emerald-800',
-    answered: 'bg-violet-100 text-violet-800',
-    rejected: 'bg-red-100 text-red-800',
-    declined: 'bg-amber-100 text-amber-800',
-} %}
-<ul class="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white text-sm">
+{# items: Precedent or Recollection (a precedent with its distance); shown inside a panel #}
+{% set tones = {approved: 'success', answered: 'question', rejected: 'danger', declined: 'warning'} %}
+<ul class="-my-1 divide-y divide-hairline text-sm">
     {% for item in items %}
         {% set precedent = item.precedent ?? item %}
-        <li class="space-y-1 p-3">
+        <li class="grid gap-1 py-3">
             <div class="flex flex-wrap items-center gap-2">
-                <span class="rounded px-2 py-0.5 text-xs font-medium {{ verdict_classes[precedent.verdict.value] }}">{{ precedent.verdict.value|capitalize }}</span>
-                <code class="text-xs">{{ precedent.toolName }}</code>
+                <twig:Pill tone="{{ tones[precedent.verdict.value] }}">{{ precedent.verdict.value|capitalize }}</twig:Pill>
+                <code class="font-mono text-xs">{{ precedent.toolName }}</code>
                 <span class="text-xs text-slate-500">
-                    by {{ precedent.decidedBy }} · {{ precedent.decidedAt|date('Y-m-d') }}
+                    by {{ precedent.decidedBy }} · <twig:Time :at="precedent.decidedAt" format="date" />
                     {%- if item.distance is defined %} · {{ ((1 - item.distance) * 100)|round }}% similar{% endif %}
                     {%- if not precedent.hasEmbedding %} · not indexed yet{% endif %}
                 </span>
                 {% if precedent.decision %}
-                    <a class="ml-auto text-xs underline" href="{{ path('app_decision_show', {id: precedent.decision.id}) }}">Decision</a>
+                    <a class="ml-auto text-xs font-medium text-accent hover:underline" href="{{ path('app_decision_show', {id: precedent.decision.id}) }}">Decision</a>
                 {% endif %}
             </div>
             <p class="text-slate-700">{{ precedent.reason }}</p>
-            {% if precedent.note %}<p class="whitespace-pre-line text-slate-600">“{{ precedent.note }}”</p>{% endif %}
-            {% if precedent.answer %}<pre class="overflow-auto rounded bg-slate-50 p-2 text-xs">{{ precedent.answer|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE')) }}</pre>{% endif %}
+            {% if precedent.note %}<p class="whitespace-pre-line text-slate-500">“{{ precedent.note }}”</p>{% endif %}
+            {% if precedent.answer %}<pre class="overflow-auto rounded-lg bg-slate-50 p-2 font-mono text-xs">{{ precedent.answer|json_encode(constant('JSON_UNESCAPED_SLASHES') b-or constant('JSON_UNESCAPED_UNICODE')) }}</pre>{% endif %}
         </li>
     {% else %}
-        <li class="p-3 text-slate-500">{{ empty|default('Nothing yet.') }}</li>
+        <li class="py-3 text-slate-500">{{ empty|default('Nothing yet.') }}</li>
     {% endfor %}
 </ul>

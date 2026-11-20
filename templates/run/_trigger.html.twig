@@ -1,0 +1,15 @@
+{# What started a run, in plain words #}
+{%- set event = run.event -%}
+{%- if event is null -%}
+    Run by hand
+{%- elseif event.source == 'schedule' -%}
+    Schedule
+{%- elseif event.source == 'poll' -%}
+    Poll · {{ event.type }}
+{%- elseif event.source == 'absence' -%}
+    Missing event · {{ event.type|replace({'.without.': ' without '}) }}
+{%- elseif event.source in ['mcp', 'subscription'] -%}
+    MCP subscription · {{ event.type }}
+{%- else -%}
+    Webhook · {{ event.type }}
+{%- endif -%}

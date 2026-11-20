@@ -1,0 +1,11 @@
+{# A moment in UTC that the browser shows in the viewer's time zone #}
+{% props at, format = 'datetime' %}
+{% set formats = {
+    time: 'H:i',
+    'time-seconds': 'H:i:s',
+    datetime: 'M j, H:i',
+    'datetime-seconds': 'M j, H:i:s',
+    date: 'M j, Y',
+    day: 'l j F',
+} %}
+<time datetime="{{ at|date('Y-m-d\\TH:i:s\\Z', 'UTC') }}" data-controller="local-time" data-local-time-format-value="{{ format }}" {{ attributes }}>{{ at|date(formats[format], 'UTC') }}</time>

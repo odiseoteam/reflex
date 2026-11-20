@@ -1,0 +1,19 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Decisions · Reflex{% endblock %}
+
+{% block body %}
+    <twig:PageHeader title="Decisions" subtitle="What agents want to do and can't without you. Approving runs exactly the tool and arguments shown." />
+
+    <div class="grid gap-6">
+        <twig:Panel title="Pending" subtitle="Proposals and server questions waiting for a person." flush>
+            {{ include('decision/_list.html.twig', {decisions: pending, empty: 'Nothing waits for you.'}) }}
+        </twig:Panel>
+
+        {% if decided is not empty %}
+            <twig:Panel title="Recently decided" flush>
+                {{ include('decision/_list.html.twig', {decisions: decided, empty: ''}) }}
+            </twig:Panel>
+        {% endif %}
+    </div>
+{% endblock %}

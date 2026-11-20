@@ -3,36 +3,42 @@
 {% block title %}Reflexes · Reflex{% endblock %}
 
 {% block body %}
-    <div class="mb-6 flex items-center justify-between">
-        <div>
-            <h1 class="text-2xl font-semibold">Reflexes</h1>
-            <p class="text-sm text-slate-600">What agents do on their own when something happens.</p>
-        </div>
+    <twig:PageHeader title="Reflexes" subtitle="Agents that act on their own when something happens, within a policy per tool.">
         {% if is_granted('ROLE_ADMIN') %}
-        <a href="{{ path('app_reflex_new') }}" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">New reflex</a>
+            <twig:Button href="{{ path('app_reflex_new') }}" variant="primary">New reflex</twig:Button>
         {% endif %}
-    </div>
+    </twig:PageHeader>
 
-    {% if reflexes is empty %}
-        <div class="mb-8 rounded-lg border border-dashed border-slate-300 bg-white p-10 text-center text-slate-600">
-            No reflexes yet.
-        </div>
-    {% else %}
-        <ul class="mb-8 divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white">
-            {% for reflex in reflexes %}
-                <li>
-                    <a href="{{ path('app_reflex_show', {id: reflex.id}) }}" class="flex items-center justify-between px-4 py-3 hover:bg-slate-50">
-                        <div>
-                            <div class="font-medium">{{ reflex.name }}</div>
-                            <div class="text-sm text-slate-500">{{ include('reflex/_trigger.html.twig') }}</div>
-                        </div>
-                        <span class="text-xs {{ reflex.enabled ? 'text-emerald-700' : 'text-slate-500' }}">{{ reflex.enabled ? 'Enabled' : 'Disabled' }}</span>
-                    </a>
-                </li>
-            {% endfor %}
-        </ul>
-    {% endif %}
-
-    <h2 class="mb-3 text-lg font-semibold">Latest runs</h2>
-    {{ include('reflex/_runs.html.twig') }}
+    <twig:Panel flush>
+        {% if reflexes is empty %}
+            <p class="px-5 py-10 text-center text-sm text-slate-500">No reflexes yet. Create one, or set up the demo company with <code class="font-mono text-xs">bin/console reflex:demo:setup</code>.</p>
+        {% else %}
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 text-left text-xs text-slate-500">
+                    <tr>
+                        <th class="px-5 py-2.5 font-medium">Reflex</th>
+                        <th class="hidden px-5 py-2.5 font-medium md:table-cell">Model</th>
+                        <th class="hidden px-5 py-2.5 font-medium sm:table-cell">Last run</th>
+                        <th class="px-5 py-2.5 font-medium">Status</th>
+                        <th class="py-2.5 pl-2 pr-4"><span class="sr-only">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-hairline">
+                    {% for reflex in reflexes %}
+                        {% set last_run = last_runs[reflex.id.toRfc4122] ?? null %}
+                        <tr class="hover:bg-slate-50">
+                            <td class="w-full max-w-0 px-5 py-3.5">
+                                <a href="{{ path('app_reflex_show', {id: reflex.id}) }}" class="font-medium hover:underline">{{ reflex.name }}</a>
+                                <div class="truncate text-xs text-slate-500">{{ include('reflex/_trigger.html.twig') }}</div>
+                            </td>
+                            <td class="hidden whitespace-nowrap px-5 py-3.5 font-mono text-xs text-slate-500 md:table-cell">{{ reflex.model }}</td>
+                            <td class="hidden whitespace-nowrap px-5 py-3.5 text-slate-500 tabular-nums sm:table-cell">{% if last_run %}<twig:Time :at="last_run" />{% else %}Never{% endif %}</td>
+                            <td class="px-5 py-3.5"><twig:Pill tone="{{ reflex.enabled ? 'success' : 'neutral' }}">{{ reflex.enabled ? 'On' : 'Off' }}</twig:Pill></td>
+                            <td class="w-px py-3.5 pl-2 pr-4 text-right"><twig:Button href="{{ path('app_reflex_show', {id: reflex.id}) }}" size="sm">Open</twig:Button></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </twig:Panel>
 {% endblock %}

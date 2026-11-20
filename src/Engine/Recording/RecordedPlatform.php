@@ -31,6 +31,8 @@ final class RecordedPlatform implements PlatformInterface
         private readonly Recordings $recordings,
         private readonly string $reflex,
         private readonly string $moment,
+        /** With a live model, ask it only for answers not recorded yet. */
+        private readonly bool $fill = false,
     ) {
     }
 
@@ -38,13 +40,14 @@ final class RecordedPlatform implements PlatformInterface
     {
         $key = $this->moment.'#'.++$this->calls;
 
-        if (null !== $this->live) {
+        $answer = null === $this->live || $this->fill ? $this->recordings->find($this->reflex, $key) : null;
+        if (null !== $answer) {
+            $result = self::unserialize($answer);
+        } elseif (null !== $this->live) {
             $result = $this->live->invoke($model, $input, $options)->getResult();
             $this->recordings->save($this->reflex, $key, self::serialize($result));
         } else {
-            $answer = $this->recordings->find($this->reflex, $key)
-                ?? throw new NoRecordingException(\sprintf('"%s" has no recorded answer for %s. Set ANTHROPIC_API_KEY to run it with the live model.', $this->reflex, $key));
-            $result = self::unserialize($answer);
+            throw new NoRecordingException(\sprintf('"%s" has no recorded answer for %s. Set ANTHROPIC_API_KEY to run it with the live model.', $this->reflex, $key));
         }
 
         return self::deferred($result, $options);

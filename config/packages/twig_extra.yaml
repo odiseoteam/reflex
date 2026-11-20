@@ -1,0 +1,6 @@
+twig_extra:
+    commonmark:
+        # Agent output is model-written: raw HTML is shown as text and risky links are dropped.
+        html_input: escape
+        allow_unsafe_links: false
+        max_nesting_level: 20

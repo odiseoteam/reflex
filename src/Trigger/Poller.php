@@ -122,7 +122,8 @@ final readonly class Poller
                 return false;
             }
 
-            return $this->fire($reflex, 'items.new', hash('sha256', implode("\n", array_keys($new))), ['tool' => $poll->tool, 'items' => array_values($new)]);
+            // Keyed by content: the same items again are one event, an item posted again is another.
+            return $this->fire($reflex, 'items.new', hash('sha256', json_encode($new, \JSON_THROW_ON_ERROR)), ['tool' => $poll->tool, 'items' => array_values($new)]);
         }
 
         $hash = hash('sha256', json_encode($data, \JSON_THROW_ON_ERROR));

@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Mcp\Server;
 
+use App\Engine\Recording\ModelGateway;
 use App\Entity\Connection;
 use App\Entity\Decision;
 use App\Entity\Precedent;
@@ -47,6 +48,7 @@ final readonly class ReflexTools
         private MessageBusInterface $bus,
         private Security $security,
         private UrlGeneratorInterface $urls,
+        private ModelGateway $models,
     ) {
     }
 
@@ -143,6 +145,9 @@ final readonly class ReflexTools
     ): array {
         $this->requireAdmin();
         $reflex = $this->find($id);
+        if (!$this->models->canRunByHand($reflex)) {
+            throw new ToolCallException(ModelGateway::NO_RUN_BY_HAND);
+        }
 
         $run = new Run($reflex);
         $this->entityManager->persist($run);

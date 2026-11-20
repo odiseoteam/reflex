@@ -280,6 +280,16 @@ class Reflex
     }
 
     /**
+     * Makes the poll treat an item it saw as new again.
+     */
+    public function forgetPolledItem(string $key): void
+    {
+        if (isset($this->pollState['keys'])) {
+            $this->pollState['keys'] = array_values(array_diff($this->pollState['keys'], [$key]));
+        }
+    }
+
+    /**
      * @param array{keys?: list<string>, hash?: string} $state
      */
     public function setPollState(array $state): void

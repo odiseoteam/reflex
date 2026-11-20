@@ -1,0 +1,13 @@
+{# counts: steps by kind value #}
+{% set parts = [
+    {kind: 'tool_call', label: 'ran', class: 'text-emerald-700'},
+    {kind: 'proposal', label: 'proposed', class: 'text-amber-700'},
+    {kind: 'blocked', label: 'blocked', class: 'font-semibold text-red-700'},
+    {kind: 'error', label: 'failed', class: 'text-red-700'},
+] %}
+{% set shown = parts|filter(part => (counts[part.kind] ?? 0) > 0) %}
+{% if shown is empty %}
+    <span class="text-slate-400">No tool calls</span>
+{% else %}
+    {% for part in shown %}<span class="{{ part.class }}">{{ counts[part.kind] }} {{ part.label }}</span>{% if not loop.last %}<span class="text-slate-300"> · </span>{% endif %}{% endfor %}
+{% endif %}

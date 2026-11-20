@@ -21,15 +21,17 @@ use Symfony\Component\Uid\Uuid;
 final readonly class Scenarios
 {
     public const array ALL = [
-        'payment-failed' => 'Ana\'s subscription renewal is declined (webhook payment.failed). Use --customer=bruno for a new customer.',
+        'payment-failed' => 'A customer\'s payment is declined (webhook payment.failed). Ana is a loyal subscriber, Bruno a new customer.',
         'customer-replies' => 'Carla replies on ticket T-501 with a photo of the torn bag (subscription notification).',
-        'order-paid' => 'Bruno pays an order (webhook order.paid). Unless order-shipped follows within 2 minutes, "Paid but not shipped" runs.',
+        'order-paid' => 'Bruno pays an order (webhook order.paid). Unless it ships within 2 minutes, "Chase late shipments" runs.',
         'order-shipped' => 'The latest paid order ships (webhook order.shipped).',
-        'bad-review' => 'A 1-star review is posted; "Review watch" finds it on its next poll, within a minute.',
+        'bad-review' => 'A 1-star review is posted; "Reply to bad reviews" finds it on its next poll, within a minute.',
         'weekly-digest' => 'Runs the weekly digest now instead of on Monday.',
     ];
 
-    private const array CUSTOMERS = ['ana' => 'cus_ana', 'bruno' => 'cus_bruno', 'carla' => 'cus_carla'];
+    public const array CUSTOMERS = ['ana' => 'cus_ana', 'bruno' => 'cus_bruno', 'carla' => 'cus_carla'];
+    /** Customers whose failed payment has recorded answers, so it plays without an API key. */
+    public const array RECORDED_CUSTOMERS = ['ana' => 'Ana', 'bruno' => 'Bruno'];
 
     /** Fixed ids, so a replayed run finds the same orders and reviews it was recorded with. */
     private const array FAILED_ORDERS = ['cus_ana' => 'PC-1101', 'cus_bruno' => 'PC-1102', 'cus_carla' => 'PC-1103'];
@@ -90,7 +92,7 @@ final readonly class Scenarios
             'customer' => ['name' => $customer['name'], 'email' => $customer['email']],
         ]);
 
-        return \sprintf('%s: the payment of %s (%.2f EUR) failed. "Failed payments" runs.', Store::text($customer, 'name'), Store::text($order, 'id'), Store::amount($order, 'total'));
+        return \sprintf('%s: the payment of %s (%.2f EUR) failed. "Rescue failed payments" runs.', Store::text($customer, 'name'), Store::text($order, 'id'), Store::amount($order, 'total'));
     }
 
     private function customerReplies(Store $store): string
@@ -107,7 +109,7 @@ final readonly class Scenarios
         });
         $store->publish(new ResourceUpdatedNotification(PolarCoffee::WATCHED_TICKET));
 
-        return 'Carla replied on T-501. The helpdesk notifies the subscription and "Ticket follow-up" runs (the listener service must be up).';
+        return 'Carla replied on T-501. The helpdesk notifies the subscription and "Answer ticket replies" runs (the listener service must be up).';
     }
 
     private function orderPaid(Store $store): string
@@ -123,7 +125,7 @@ final readonly class Scenarios
 
         $this->webhook('order.paid', ['order_id' => $order['id'], 'amount' => 28.0, 'customer' => ['email' => 'bruno@example.com']]);
 
-        return \sprintf('Bruno paid %s. Ship it with "order-shipped" within 2 minutes, or "Paid but not shipped" runs.', $order['id']);
+        return \sprintf('Bruno paid %s. Ship it with "order-shipped" within 2 minutes, or "Chase late shipments" runs.', $order['id']);
     }
 
     private function orderShipped(Store $store): string
@@ -150,7 +152,11 @@ final readonly class Scenarios
             return [$data, null];
         });
 
-        return 'Bruno posted a 1-star review. "Review watch" picks it up on its next poll.';
+        // Its id is fixed to match the recorded answers, so the watch forgets it to see it as new.
+        $this->reflexes->findOneBy(['name' => 'Reply to bad reviews'])?->forgetPolledItem(self::BAD_REVIEW);
+        $this->entityManager->flush();
+
+        return 'Bruno posted a 1-star review. "Reply to bad reviews" picks it up on its next poll.';
     }
 
     private function runNow(string $name): string

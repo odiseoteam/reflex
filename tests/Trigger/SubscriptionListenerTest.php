@@ -9,6 +9,7 @@ use App\Entity\ConnectionAuth;
 use App\Entity\IncomingEvent;
 use App\Entity\Reflex;
 use App\Entity\Run;
+use App\Mcp\ResourceReaderInterface;
 use App\Trigger\SubscriptionListener;
 use App\Trigger\SubscriptionTrigger;
 use Doctrine\ORM\EntityManagerInterface;
@@ -91,6 +92,34 @@ final class SubscriptionListenerTest extends KernelTestCase
 
         self::assertSame(0, $this->listener()->dispatch($this->tracker, new ToolListChangedNotification()));
         self::assertSame(0, $this->listener()->dispatch($this->tracker, new ResourceUpdatedNotification('tracker://issues/1')));
+    }
+
+    public function testAChangeMissedBetweenStreamsFiresWhenTheNextOneOpens(): void
+    {
+        $reader = new class implements ResourceReaderInterface {
+            public string $text = 'Open, waiting for the customer.';
+
+            public function read(Connection $connection, string $uri): array
+            {
+                return [['mimeType' => 'text/plain', 'text' => $this->text]];
+            }
+        };
+        self::getContainer()->set(ResourceReaderInterface::class, $reader);
+        $watched = new SubscriptionFilter(resourceSubscriptions: ['tracker://issues/42']);
+
+        self::assertSame(0, $this->listener()->catchUp($this->tracker, $watched), 'The first stream only takes it as it is.');
+
+        $reader->text = 'The customer replied with a photo.';
+        self::assertSame(1, $this->listener()->catchUp($this->tracker, $watched));
+        $run = $this->entityManager->getRepository(Run::class)->findAll()[0];
+        self::assertSame('Issue 42', $run->getReflex()->getName());
+        self::assertSame([['mimeType' => 'text/plain', 'text' => 'The customer replied with a photo.']], $run->getEvent()?->getPayload()['contents']);
+
+        self::assertSame(0, $this->listener()->catchUp($this->tracker, $watched), 'Unchanged since.');
+
+        $reader->text = 'Closed.';
+        $this->listener()->dispatch($this->tracker, new ResourceUpdatedNotification('tracker://issues/42'));
+        self::assertSame(0, $this->listener()->catchUp($this->tracker, $watched), 'The stream already delivered it.');
     }
 
     private function reflex(string $name, SubscriptionTrigger $trigger): Reflex

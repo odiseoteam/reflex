@@ -3,37 +3,41 @@
 {% block title %}Connect {{ client.name }} · Reflex{% endblock %}
 
 {% block body %}
-    <form method="post" class="mx-auto mt-8 max-w-md space-y-5 rounded-lg border border-slate-200 bg-white p-6">
-        <h1 class="text-xl font-semibold">Connect {{ client.name }} to Reflex?</h1>
+    <form method="post" class="mx-auto mt-6 grid max-w-md gap-5 rounded-xl border border-hairline bg-white p-6">
+        <h1 class="text-xl font-semibold tracking-tight">Connect {{ client.name }} to Reflex?</h1>
 
         <p class="text-sm text-slate-600">
-            <strong>{{ client.name }}</strong>
-            {%- if client_host %} (published by <code>{{ client_host }}</code>){% else %} (registered itself, so Reflex can't vouch for its name){% endif %}
-            wants to act as <strong>{{ app.user.name }}</strong> through Reflex's MCP server.
+            <strong class="text-ink">{{ client.name }}</strong>
+            {%- if client_host %} (published by <code class="font-mono text-xs">{{ client_host }}</code>){% else %} (registered itself, so Reflex can't vouch for its name){% endif %}
+            wants to act as <strong class="text-ink">{{ app.user.name }}</strong> through Reflex's MCP server.
         </p>
 
-        <ul class="space-y-2 text-sm">
+        <ul class="grid gap-2 rounded-lg border border-hairline p-3 text-sm">
             {% for scope in scopes %}
-                <li class="flex gap-2"><span class="text-emerald-700">✓</span> {{ scope.describe }} <code class="ml-auto text-xs text-slate-400">{{ scope.value }}</code></li>
+                <li class="flex items-start gap-2">
+                    <svg class="mt-0.5 shrink-0 text-emerald-600" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12l5 5L20 7"/></svg>
+                    <span class="flex-1">{{ scope.describe }}</span>
+                    <code class="font-mono text-xs text-slate-400">{{ scope.value }}</code>
+                </li>
             {% endfor %}
         </ul>
 
         {% if read_only %}
-            <p class="rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-900">
+            <p class="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
                 {{ app.user.admin ? 'It only asked to read.' : 'You are a viewer, so it can only read.' }}
             </p>
         {% else %}
-            <p class="rounded-md bg-slate-50 px-3 py-2 text-sm text-slate-700">
+            <p class="rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">
                 Approvals it makes run real actions, and count as yours.
             </p>
         {% endif %}
 
-        <p class="text-xs text-slate-500">After you choose, you go back to <code>{{ redirect_host }}</code>. You can disconnect it anytime under Connected apps.</p>
+        <p class="text-xs text-slate-500">After you choose, you go back to <code class="font-mono">{{ redirect_host }}</code>. You can disconnect it anytime under Connected apps.</p>
 
         <input type="hidden" name="_token" value="{{ csrf_token('oauth-consent') }}">
         <div class="flex gap-2">
-            <button name="decision" value="allow" class="flex-1 rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">Allow</button>
-            <button name="decision" value="deny" class="flex-1 rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Deny</button>
+            <twig:Button variant="primary" name="decision" value="allow" class="flex-1">Allow</twig:Button>
+            <twig:Button name="decision" value="deny" class="flex-1">Deny</twig:Button>
         </div>
     </form>
 {% endblock %}

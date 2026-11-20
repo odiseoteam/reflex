@@ -5,56 +5,71 @@
 {% block title %}{{ reflex ? 'Edit ' ~ reflex.name : 'New reflex' }} · Reflex{% endblock %}
 
 {% block body %}
-    <h1 class="mb-6 text-2xl font-semibold">{{ reflex ? 'Edit ' ~ reflex.name : 'New reflex' }}</h1>
+    {% set back = reflex ? path('app_reflex_show', {id: reflex.id}) : path('app_reflex_index') %}
+    <twig:PageHeader title="{{ reflex ? 'Edit ' ~ reflex.name : 'New reflex' }}" subtitle="When it fires, what the agent is told, which systems it can reach and how far it may go." :crumbs="reflex ? [{label: 'Reflexes', url: path('app_reflex_index')}, {label: reflex.name, url: path('app_reflex_show', {id: reflex.id})}] : [{label: 'Reflexes', url: path('app_reflex_index')}]" current="{{ reflex ? 'Edit' : 'New reflex' }}" />
 
-    {{ form_start(form, {attr: {class: 'max-w-2xl space-y-5 rounded-lg border border-slate-200 bg-white p-6', 'data-controller': 'trigger-fields'}}) }}
-        {{ form_row(form.name) }}
-        <div class="grid gap-4 sm:grid-cols-2">
-            {{ form_row(form.triggerSource, {attr: {'data-trigger-fields-target': 'source', 'data-action': 'trigger-fields#toggle'}}) }}
-            <div data-trigger-for="generic github stripe">{{ form_row(form.triggerEvent) }}</div>
-            <div data-trigger-for="schedule">{{ form_row(form.cron) }}</div>
-        </div>
-        <fieldset data-trigger-for="poll" class="space-y-4 rounded-md border border-slate-200 p-4">
-            <legend class="px-1 text-sm font-medium text-slate-700">Poll an MCP tool</legend>
-            <div class="grid gap-4 sm:grid-cols-2">
-                {{ form_row(form.pollConnection) }}
-                {{ form_row(form.pollTool) }}
+    {{ form_start(form, {attr: {class: 'grid max-w-3xl gap-6', 'data-controller': 'trigger-fields'}}) }}
+        <twig:Panel title="Trigger" subtitle="What makes it run.">
+            <div class="grid gap-5">
+                {{ form_row(form.name) }}
+                <div class="grid gap-5 sm:grid-cols-2">
+                    {{ form_row(form.triggerSource, {attr: {'data-trigger-fields-target': 'source', 'data-action': 'trigger-fields#toggle'}}) }}
+                    <div data-trigger-for="generic github stripe">{{ form_row(form.triggerEvent) }}</div>
+                    <div data-trigger-for="schedule">{{ form_row(form.cron) }}</div>
+                </div>
+                <fieldset data-trigger-for="poll" class="grid gap-5 rounded-lg border border-hairline p-4">
+                    <legend class="px-1 text-sm font-semibold">Poll an MCP tool</legend>
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        {{ form_row(form.pollConnection) }}
+                        {{ form_row(form.pollTool) }}
+                    </div>
+                    {{ form_row(form.pollArguments) }}
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        {{ form_row(form.pollIntervalMinutes) }}
+                        {{ form_row(form.pollItemKey) }}
+                    </div>
+                </fieldset>
+                <fieldset data-trigger-for="subscription" class="grid gap-5 rounded-lg border border-hairline p-4">
+                    <legend class="px-1 text-sm font-semibold">MCP subscription</legend>
+                    {{ form_row(form.subscriptionConnection) }}
+                    {{ form_row(form.subscriptionUris) }}
+                    {{ form_row(form.subscriptionListChanged) }}
+                </fieldset>
+                <fieldset data-trigger-for="absence" class="grid gap-5 rounded-lg border border-hairline p-4">
+                    <legend class="px-1 text-sm font-semibold">X without Y</legend>
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        {{ form_row(form.absenceSource) }}
+                        {{ form_row(form.absenceCorrelation) }}
+                        {{ form_row(form.absenceWhen) }}
+                        {{ form_row(form.absenceMissing) }}
+                        {{ form_row(form.absenceWithinMinutes) }}
+                    </div>
+                </fieldset>
             </div>
-            {{ form_row(form.pollArguments) }}
-            <div class="grid gap-4 sm:grid-cols-2">
-                {{ form_row(form.pollIntervalMinutes) }}
-                {{ form_row(form.pollItemKey) }}
+        </twig:Panel>
+
+        <twig:Panel title="Agent" subtitle="Its instructions, model and the systems whose tools it gets.">
+            <div class="grid gap-5">
+                {{ form_row(form.instructions) }}
+                {{ form_row(form.model) }}
+                {{ form_row(form.connections) }}
             </div>
-        </fieldset>
-        <fieldset data-trigger-for="subscription" class="space-y-4 rounded-md border border-slate-200 p-4">
-            <legend class="px-1 text-sm font-medium text-slate-700">MCP subscription</legend>
-            {{ form_row(form.subscriptionConnection) }}
-            {{ form_row(form.subscriptionUris) }}
-            {{ form_row(form.subscriptionListChanged) }}
-        </fieldset>
-        <fieldset data-trigger-for="absence" class="space-y-4 rounded-md border border-slate-200 p-4">
-            <legend class="px-1 text-sm font-medium text-slate-700">X without Y</legend>
-            <div class="grid gap-4 sm:grid-cols-2">
-                {{ form_row(form.absenceSource) }}
-                {{ form_row(form.absenceCorrelation) }}
-                {{ form_row(form.absenceWhen) }}
-                {{ form_row(form.absenceMissing) }}
-                {{ form_row(form.absenceWithinMinutes) }}
+        </twig:Panel>
+
+        <twig:Panel title="Limits" subtitle="A run stops when it reaches any of them.">
+            <div class="grid gap-5">
+                <div class="grid gap-5 sm:grid-cols-3">
+                    {{ form_row(form.dailyTokenBudget) }}
+                    {{ form_row(form.maxToolCalls) }}
+                    {{ form_row(form.timeLimitSeconds) }}
+                </div>
+                {{ form_row(form.enabled) }}
             </div>
-        </fieldset>
-        {{ form_row(form.instructions) }}
-        {{ form_row(form.model) }}
-        {{ form_row(form.connections) }}
-        <div class="grid gap-4 sm:grid-cols-3">
-            {{ form_row(form.dailyTokenBudget) }}
-            {{ form_row(form.maxToolCalls) }}
-            {{ form_row(form.timeLimitSeconds) }}
-        </div>
-        {{ form_row(form.enabled) }}
+        </twig:Panel>
 
         <div class="flex items-center gap-3">
-            <button type="submit" class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">Save</button>
-            <a href="{{ reflex ? path('app_reflex_show', {id: reflex.id}) : path('app_reflex_index') }}" class="text-sm text-slate-600 hover:text-slate-900">Cancel</a>
+            <twig:Button variant="primary" type="submit">Save</twig:Button>
+            <a href="{{ back }}" class="text-sm text-slate-500 hover:text-ink">Cancel</a>
         </div>
     {{ form_end(form) }}
 {% endblock %}

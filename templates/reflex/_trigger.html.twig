@@ -1,9 +1,9 @@
 {% if reflex.scheduled %}
-    On schedule <code>{{ reflex.cron }}</code> UTC · next {{ reflex.nextRunAt(date())|date('Y-m-d H:i', 'UTC') }}
+    On schedule <code>{{ reflex.cron }}</code> UTC · next <twig:Time :at="reflex.nextRunAt(date())" />
 {%- elseif reflex.pollTrigger %}
     {%- set poll = reflex.pollTrigger %}
     Polls <code>{{ poll.tool }}</code> every {{ poll.intervalMinutes }} min, on {{ poll.itemKey ? 'new items by ' ~ poll.itemKey : 'any change' }}
-    {%- if reflex.lastPolledAt %} · last {{ reflex.lastPolledAt|date('H:i', 'UTC') }} UTC{% endif %}
+    {%- if reflex.lastPolledAt %} · last <twig:Time :at="reflex.lastPolledAt" format="time" />{% endif %}
 {%- elseif reflex.absenceTrigger %}
     {%- set absence = reflex.absenceTrigger %}
     On <code>{{ absence.whenEvent }}</code> without <code>{{ absence.missingEvent }}</code> within {{ absence.withinMinutes }} min, same <code>{{ absence.correlationPath }}</code> ({{ absence.source }})

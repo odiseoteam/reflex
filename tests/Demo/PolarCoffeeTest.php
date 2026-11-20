@@ -13,6 +13,7 @@ use App\Entity\Run;
 use App\Entity\ToolPolicy;
 use App\Entity\User;
 use App\Repository\ReflexRepository;
+use App\Trigger\Poller;
 use Demo\PolarCoffee\Store;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Test\KernelTestCase;
@@ -60,11 +61,11 @@ final class PolarCoffeeTest extends KernelTestCase
             array_map(static fn (Reflex $reflex): string => $reflex->getTriggerSource(), $reflexes),
         );
 
-        $failedPayments = $this->reflex('Failed payments');
+        $failedPayments = $this->reflex('Rescue failed payments');
         self::assertSame(ToolPolicy::Approval, $failedPayments->policyFor('shop_issue_coupon'));
-        self::assertSame(2, $failedPayments->approvalsFor('shop_refund_order'));
+        self::assertSame(1, $failedPayments->approvalsFor('shop_refund_order'));
         self::assertSame(ToolPolicy::Forbidden, $this->reflex('Weekly digest')->policyFor('shop_refund_order'));
-        self::assertSame([PolarCoffee::WATCHED_TICKET], $this->reflex('Ticket follow-up')->getSubscriptionTrigger()?->resourceUris);
+        self::assertSame([PolarCoffee::WATCHED_TICKET], $this->reflex('Answer ticket replies')->getSubscriptionTrigger()?->resourceUris);
     }
 
     public function testAFailedPaymentChangesTheShopAndRunsTheReflex(): void
@@ -79,7 +80,7 @@ final class PolarCoffeeTest extends KernelTestCase
 
         $runs = $this->entityManager->getRepository(Run::class)->findAll();
         self::assertCount(1, $runs);
-        self::assertSame('Failed payments', $runs[0]->getReflex()->getName());
+        self::assertSame('Rescue failed payments', $runs[0]->getReflex()->getName());
         $event = $runs[0]->getEvent();
         self::assertInstanceOf(IncomingEvent::class, $event);
         self::assertSame('payment.failed', $event->getType());
@@ -97,6 +98,29 @@ final class PolarCoffeeTest extends KernelTestCase
 
         $this->expectException(\InvalidArgumentException::class);
         $this->scenarios()->play('order-shipped');
+    }
+
+    public function testABadReviewFiresEveryTimeItIsPosted(): void
+    {
+        $this->polarCoffee()->install('secret', resetData: true);
+        $reflex = $this->reflex('Reply to bad reviews');
+        $poll = $reflex->getPollTrigger();
+        self::assertNotNull($poll);
+        $poller = self::getContainer()->get(Poller::class);
+        $reviews = static fn (): array => ['reviews' => Store::fromEnvironment()->read()['reviews']];
+
+        self::assertFalse($poller->compare($reflex, $poll, $reviews()), 'The first poll takes a baseline.');
+
+        $this->scenarios()->play('bad-review');
+        self::assertTrue($poller->compare($reflex, $poll, $reviews()));
+
+        $this->scenarios()->play('bad-review');
+        // Posted a while later, as a person replaying the scenario would.
+        Store::fromEnvironment()->change(static fn (array $data): array => [['reviews' => Store::update($data['reviews'], 'id', 'rev_401', static fn (array $review): array => ['at' => '2030-01-01T00:00:00Z'] + $review)] + $data, null]);
+        self::assertTrue($poller->compare($reflex, $poll, $reviews()), 'Posted again, it fires again.');
+        self::assertFalse($poller->compare($reflex, $poll, $reviews()), 'Seen once, it does not.');
+
+        self::assertCount(2, $this->entityManager->getRepository(Run::class)->findBy(['reflex' => $reflex]));
     }
 
     public function testResettingForgetsWhatHappened(): void

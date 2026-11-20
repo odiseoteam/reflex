@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Engine;
 
 use App\Engine\Recording\ModelGateway;
+use App\Engine\Recording\NoRecordingException;
 use App\Entity\Decision;
 use App\Entity\DecisionKind;
 use App\Entity\IncomingEvent;
@@ -112,6 +113,13 @@ final readonly class ReflexRunner
             }
 
             $this->finish($run, $output);
+        } catch (NoRecordingException $e) {
+            // A replayed run resumed after decisions nobody recorded still ends, with what happened.
+            if ($run->getSegment() > 1) {
+                $this->finish($run, $this->withoutModel($run));
+            } else {
+                $this->finish($run, null, $e->getMessage());
+            }
         } catch (\Throwable $e) {
             $this->logger->error('Run {run} failed.', ['run' => $run->getId()->toRfc4122(), 'exception' => $e]);
             $this->finish($run, null, $e->getMessage());
@@ -151,6 +159,30 @@ final readonly class ReflexRunner
             "People decided on your proposals and the servers' questions:\n\n".implode("\n\n", $outcomes)
             ."\n\nContinue with whatever depends on these decisions, then summarise.",
         ));
+    }
+
+    /**
+     * The closing summary of a replayed segment that has no recorded answer: what people
+     * decided and what the approved calls returned.
+     */
+    private function withoutModel(Run $run): string
+    {
+        $lines = [];
+        foreach ($this->decisions->findByRun($run) as $decision) {
+            if ($decision->getSegment() !== $run->getSegment() - 1) {
+                continue;
+            }
+            $question = DecisionKind::Question === $decision->getKind();
+            [$verb, $detail] = match ($decision->getStatus()) {
+                Decision::EXECUTED => [$question ? 'Answered and ran' : 'Approved and ran', $decision->getResult()],
+                Decision::FAILED => [$question ? 'Answered, but it failed' : 'Approved, but it failed', $decision->getResult()],
+                default => [$question ? 'Declined' : 'Rejected', $decision->getNote()],
+            };
+            $detail = trim((string) preg_replace('/\s+/', ' ', (string) $detail));
+            $lines[] = \sprintf('- **%s** `%s`%s', $verb, $decision->getToolName(), '' === $detail ? '' : ': '.$detail);
+        }
+
+        return "No recorded answer covers these decisions, so this summary lists what happened without the model.\n\n".implode("\n", $lines);
     }
 
     private static function outcome(Decision $decision): string

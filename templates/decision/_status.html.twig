@@ -1,9 +1,2 @@
-{% set classes = {
-    proposed: 'bg-amber-100 text-amber-800',
-    asked: 'bg-violet-100 text-violet-800',
-    approved: 'bg-sky-100 text-sky-800',
-    rejected: 'bg-slate-200 text-slate-700',
-    executed: 'bg-emerald-100 text-emerald-800',
-    failed: 'bg-red-100 text-red-800',
-} %}
-<span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium {{ classes[status] }}">{{ status == 'asked' ? 'Question' : status|capitalize }}</span>
+{% set tones = {proposed: 'warning', asked: 'question', approved: 'info', rejected: 'neutral', executed: 'success', failed: 'danger'} %}
+<twig:Pill tone="{{ tones[status] }}">{{ status == 'asked' ? 'Question' : status|capitalize }}</twig:Pill>

@@ -1,14 +1,32 @@
-<ul class="divide-y divide-slate-200 overflow-hidden rounded-lg border border-slate-200 bg-white">
-    {% for decision in decisions %}
-        <li>
-            <a href="{{ path('app_decision_show', {id: decision.id}) }}" class="flex items-start justify-between gap-4 px-4 py-3 hover:bg-slate-50">
-                <div class="min-w-0">
-                    <code class="text-sm font-semibold">{{ decision.toolName }}</code>
-                    <p class="truncate text-sm text-slate-600">{{ decision.question ? decision.question.message : decision.reason }}</p>
-                    <p class="text-xs text-slate-500">{{ decision.run.reflexSnapshot.name }} · {{ decision.createdAt|date('Y-m-d H:i') }}{% if decision.status == 'proposed' and decision.requiredApprovals > 1 %} · {{ decision.countApprovals }}/{{ decision.requiredApprovals }} approvals{% endif %}</p>
-                </div>
-                {{ include('decision/_status.html.twig', {status: decision.status}) }}
-            </a>
-        </li>
-    {% endfor %}
-</ul>
+{# decisions: the rows; empty: what to say when there are none #}
+{% if decisions is empty %}
+    <p class="px-5 py-8 text-center text-sm text-slate-500">{{ empty }}</p>
+{% else %}
+    <table class="w-full text-sm">
+        <thead class="bg-slate-50 text-left text-xs text-slate-500">
+            <tr>
+                <th class="px-5 py-2.5 font-medium">Decision</th>
+                <th class="hidden px-5 py-2.5 font-medium lg:table-cell">Tool</th>
+                <th class="px-5 py-2.5 font-medium">Status</th>
+                <th class="hidden px-5 py-2.5 text-right font-medium sm:table-cell">When</th>
+                <th class="py-2.5 pl-2 pr-4"><span class="sr-only">Actions</span></th>
+            </tr>
+        </thead>
+        <tbody class="divide-y divide-hairline">
+            {% for decision in decisions %}
+                <tr class="hover:bg-slate-50">
+                    <td class="w-full max-w-0 px-5 py-3.5">
+                        <a href="{{ path('app_decision_show', {id: decision.id}) }}" class="line-clamp-2 font-medium hover:underline">{{ decision.question ? decision.question.message : decision.reason }}</a>
+                        <twig:ReflexLabel name="{{ decision.run.reflexSnapshot.name }}" class="mt-1" />
+                    </td>
+                    <td class="hidden px-5 py-3.5 lg:table-cell"><code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-700">{{ decision.toolName }}</code></td>
+                    <td class="px-5 py-3.5">{{ include('decision/_status.html.twig', {status: decision.status}) }}</td>
+                    <td class="hidden whitespace-nowrap px-5 py-3.5 text-right text-slate-500 tabular-nums sm:table-cell"><twig:Time :at="decision.decidedAt ?? decision.createdAt" /></td>
+                    <td class="w-px py-3.5 pl-2 pr-4 text-right">
+                        <twig:Button href="{{ path('app_decision_show', {id: decision.id}) }}" size="sm">{{ decision.pending ? 'Decide' : 'View' }}</twig:Button>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+{% endif %}

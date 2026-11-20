@@ -3,35 +3,38 @@
 {% block title %}Connected apps · Reflex{% endblock %}
 
 {% block body %}
-    <h1 class="mb-1 text-2xl font-semibold">Connected apps</h1>
-    <p class="mb-6 text-sm text-slate-600">MCP clients such as Claude or ChatGPT that act as you through Reflex's MCP server.</p>
+    <twig:PageHeader title="Connected apps" subtitle="MCP clients such as Claude or ChatGPT that act as you through Reflex's MCP server." />
 
-    <section class="mb-8 rounded-lg border border-slate-200 bg-white p-4 text-sm">
-        <h2 class="mb-2 font-semibold">Connect an app</h2>
-        <p class="mb-2 text-slate-600">Add this URL as a remote MCP server; the app sends you here to sign in and choose what it may do.</p>
-        <code class="block overflow-auto rounded bg-slate-50 px-3 py-2">{{ mcp_url }}</code>
-        <p class="mt-2 text-xs text-slate-500">In Claude Code: <code>claude mcp add --transport http reflex {{ mcp_url }}</code></p>
-    </section>
+    <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
+        <twig:Panel title="Your apps" flush class="lg:order-1">
+            <ul class="divide-y divide-hairline text-sm">
+                {% for grant in grants %}
+                    <li class="flex flex-wrap items-center gap-3 px-5 py-3.5">
+                        <div class="min-w-0 flex-1">
+                            <p class="font-medium">{{ grant.client.name }}
+                                {%- if grant.client.metadataDocument %} <span class="text-xs font-normal text-slate-500">{{ grant.client.clientId|split('/')[2] }}</span>{% endif %}
+                            </p>
+                            <p class="text-xs text-slate-500">
+                                {% for scope in grant.scopes %}<code class="font-mono">{{ scope }}</code>{{ not loop.last ? ', ' }}{% endfor %}
+                                · connected <twig:Time :at="grant.createdAt" />
+                                · {% if grant.lastUsedAt %}last used <twig:Time :at="grant.lastUsedAt" />{% else %}not used yet{% endif %}
+                            </p>
+                        </div>
+                        <form method="post" action="{{ path('app_connected_app_disconnect', {id: grant.id}) }}">
+                            <input type="hidden" name="_token" value="{{ csrf_token('disconnect-' ~ grant.id) }}">
+                            <twig:Button variant="danger" size="sm">Disconnect</twig:Button>
+                        </form>
+                    </li>
+                {% else %}
+                    <li class="px-5 py-8 text-center text-slate-500">No apps connected.</li>
+                {% endfor %}
+            </ul>
+        </twig:Panel>
 
-    <ul class="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white text-sm">
-        {% for grant in grants %}
-            <li class="flex flex-wrap items-center gap-3 p-4">
-                <div class="flex-1">
-                    <p class="font-medium">{{ grant.client.name }}
-                        {%- if grant.client.metadataDocument %} <span class="text-xs font-normal text-slate-500">{{ grant.client.clientId|split('/')[2] }}</span>{% endif %}
-                    </p>
-                    <p class="text-xs text-slate-500">
-                        {{ grant.scopes|join(', ') }} · connected {{ grant.createdAt|date('Y-m-d H:i') }}
-                        · {{ grant.lastUsedAt ? 'last used ' ~ grant.lastUsedAt|date('Y-m-d H:i') : 'not used yet' }}
-                    </p>
-                </div>
-                <form method="post" action="{{ path('app_connected_app_disconnect', {id: grant.id}) }}">
-                    <input type="hidden" name="_token" value="{{ csrf_token('disconnect-' ~ grant.id) }}">
-                    <button class="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-100">Disconnect</button>
-                </form>
-            </li>
-        {% else %}
-            <li class="p-4 text-slate-500">No apps connected.</li>
-        {% endfor %}
-    </ul>
+        <twig:Panel title="Connect an app" subtitle="Add this URL as a remote MCP server; the app sends you here to sign in and choose what it may do." class="lg:order-2">
+            <code class="block overflow-auto rounded-lg bg-slate-50 px-3 py-2 font-mono text-xs">{{ mcp_url }}</code>
+            <p class="mt-3 text-xs text-slate-500">In Claude Code:</p>
+            <code class="mt-1 block overflow-auto rounded-lg bg-slate-50 px-3 py-2 font-mono text-xs">claude mcp add --transport http reflex {{ mcp_url }}</code>
+        </twig:Panel>
+    </div>
 {% endblock %}

@@ -3,67 +3,52 @@
 {% block title %}{{ connection.name }} · Reflex{% endblock %}
 
 {% block body %}
-    <div class="mb-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
-            <div class="flex items-center gap-3">
-                <h1 class="text-2xl font-semibold">{{ connection.name }}</h1>
-                {{ include('connection/_status.html.twig', {status: connection.status}) }}
-            </div>
-            <p class="text-sm text-slate-600">{{ connection.url }} · {{ connection.auth.label }}</p>
-            {% if connection.toolsSyncedAt %}
-                <p class="text-xs text-slate-500">Tools synced {{ connection.toolsSyncedAt|date('Y-m-d H:i') }}</p>
-            {% endif %}
-        </div>
+    <twig:PageHeader title="{{ connection.name }}" :crumbs="[{label: 'Connections', url: path('app_connection_index')}]">
+        <twig:block name="badges">{{ include('connection/_status.html.twig', {status: connection.status}) }}</twig:block>
+        <twig:block name="meta">
+            <p class="mt-1 text-sm text-slate-500">
+                <span class="font-mono text-xs">{{ connection.url }}</span> · {{ connection.auth.label }}
+                {%- if connection.toolsSyncedAt %} · tools synced <twig:Time :at="connection.toolsSyncedAt" />{% endif %}
+            </p>
+        </twig:block>
         {% if is_granted('ROLE_ADMIN') %}
-        <div class="flex items-center gap-2">
             <form method="post" action="{{ path('app_connection_sync', {id: connection.id}) }}" data-turbo="false">
                 <input type="hidden" name="_token" value="{{ csrf_token('sync-' ~ connection.id) }}">
-                <button class="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-700">
-                    {{ connection.status.value == 'connected' ? 'Refresh tools' : 'Connect' }}
-                </button>
+                <twig:Button variant="primary">{{ connection.status.value == 'connected' ? 'Refresh tools' : 'Connect' }}</twig:Button>
             </form>
             <form method="post" action="{{ path('app_connection_delete', {id: connection.id}) }}" onsubmit="return confirm('Remove this connection and its credentials?')">
                 <input type="hidden" name="_token" value="{{ csrf_token('delete-' ~ connection.id) }}">
-                <button class="rounded-md border border-slate-300 px-4 py-2 text-sm text-slate-700 hover:bg-slate-100">Remove</button>
+                <twig:Button variant="danger">Remove</twig:Button>
             </form>
-        </div>
         {% endif %}
-    </div>
+    </twig:PageHeader>
 
     {% if connection.lastError %}
-        <div class="mb-6 rounded-md bg-red-50 px-4 py-3 text-sm text-red-800">{{ connection.lastError }}</div>
+        <div class="mb-6 rounded-xl border border-red-200 bg-red-50 px-5 py-3 text-sm text-red-800">{{ connection.lastError }}</div>
     {% endif %}
 
-    <h2 class="mb-3 text-lg font-semibold">Tools <span class="text-slate-500">({{ connection.tools|length }})</span></h2>
-
-    {% if connection.tools is empty %}
-        <p class="text-sm text-slate-600">No tools yet. Connect to load the catalog.</p>
-    {% else %}
-        <ul class="space-y-3">
-            {% for tool in connection.tools %}
-                {% set annotations = tool.annotations ?? {} %}
-                <li class="rounded-lg border border-slate-200 bg-white p-4">
-                    <div class="flex flex-wrap items-center gap-2">
-                        <code class="text-sm font-semibold">{{ connection.slug }}_{{ tool.name }}</code>
-                        {% if annotations.readOnlyHint ?? false %}
-                            <span class="rounded bg-sky-100 px-1.5 py-0.5 text-xs text-sky-800">read-only</span>
-                        {% endif %}
-                        {% if annotations.destructiveHint ?? false %}
-                            <span class="rounded bg-red-100 px-1.5 py-0.5 text-xs text-red-800">destructive</span>
-                        {% endif %}
-                        {% if annotations.idempotentHint ?? false %}
-                            <span class="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-700">idempotent</span>
-                        {% endif %}
-                    </div>
-                    {% if tool.description ?? false %}
-                        <p class="mt-1 text-sm text-slate-600">{{ tool.description }}</p>
-                    {% endif %}
+    <twig:Panel title="Tools" subtitle="{{ connection.tools|length }} from this server. Reflexes see them prefixed with {{ connection.slug }}_." flush>
+        {% if connection.tools is empty %}
+            <p class="px-5 py-6 text-sm text-slate-500">No tools yet. Connect to load the catalog.</p>
+        {% else %}
+            <ul class="divide-y divide-hairline">
+                {% for tool in connection.tools %}
+                    {% set annotations = tool.annotations ?? {} %}
                     {% set properties = tool.inputSchema.properties ?? {} %}
-                    {% if properties is not empty %}
-                        <p class="mt-2 text-xs text-slate-500">Arguments: {{ properties|keys|join(', ') }}</p>
-                    {% endif %}
-                </li>
-            {% endfor %}
-        </ul>
-    {% endif %}
+                    <li class="grid gap-1 px-5 py-3.5">
+                        <div class="flex flex-wrap items-center gap-1.5">
+                            <code class="font-mono text-xs font-semibold">{{ connection.slug }}_{{ tool.name }}</code>
+                            {% if annotations.readOnlyHint ?? false %}<twig:Pill tone="info">read-only</twig:Pill>{% endif %}
+                            {% if annotations.destructiveHint ?? false %}<twig:Pill tone="danger">destructive</twig:Pill>{% endif %}
+                            {% if annotations.idempotentHint ?? false %}<twig:Pill>idempotent</twig:Pill>{% endif %}
+                        </div>
+                        {% if tool.description ?? false %}<p class="text-sm text-slate-600">{{ tool.description }}</p>{% endif %}
+                        {% if properties is not empty %}
+                            <p class="text-xs text-slate-500">Arguments: {% for name in properties|keys %}<code class="font-mono">{{ name }}</code>{{ not loop.last ? ', ' }}{% endfor %}</p>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        {% endif %}
+    </twig:Panel>
 {% endblock %}

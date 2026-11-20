@@ -7,7 +7,7 @@ namespace App\Twig;
 use App\Repository\DecisionRepository;
 use Twig\Attribute\AsTwigFunction;
 
-final readonly class InboxExtension
+final readonly class DecisionExtension
 {
     public function __construct(private DecisionRepository $decisions)
     {

@@ -1,0 +1,67 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Runs · Reflex{% endblock %}
+
+{% block body %}
+    <twig:PageHeader title="Runs" subtitle="Every time a reflex ran, and what its policy let it do.">
+        <form method="get" class="flex flex-wrap items-center gap-2 text-sm">
+            <label for="run-status" class="sr-only">Status</label>
+            <select id="run-status" name="status" onchange="this.form.requestSubmit()" class="rounded-md border border-hairline bg-white px-3 py-1.5">
+                <option value="">All statuses</option>
+                {% for status in enum_cases('App\\Entity\\RunStatus') %}
+                    <option value="{{ status.value }}" {{ filter.status == status ? 'selected' }}>{{ status.value|capitalize }}</option>
+                {% endfor %}
+            </select>
+            <label for="run-reflex" class="sr-only">Reflex</label>
+            <select id="run-reflex" name="reflex" onchange="this.form.requestSubmit()" class="rounded-md border border-hairline bg-white px-3 py-1.5">
+                <option value="">All reflexes</option>
+                {% for reflex in reflexes %}
+                    <option value="{{ reflex.id }}" {{ filter.reflex == reflex.id.toRfc4122 ? 'selected' }}>{{ reflex.name }}</option>
+                {% endfor %}
+            </select>
+            <noscript><button class="rounded-md border border-hairline bg-white px-3 py-1.5 font-medium">Filter</button></noscript>
+        </form>
+    </twig:PageHeader>
+
+    <twig:Panel flush>
+        {% if runs is empty %}
+            <p class="px-5 py-10 text-center text-sm text-slate-500">No runs{{ filter.status or filter.reflex ? ' match these filters' : ' yet' }}.</p>
+        {% else %}
+            <table class="w-full text-sm">
+                <thead class="bg-slate-50 text-left text-xs text-slate-500">
+                    <tr>
+                        <th class="px-5 py-2.5 font-medium">Run</th>
+                        <th class="px-5 py-2.5 font-medium">Status</th>
+                        <th class="hidden px-5 py-2.5 font-medium lg:table-cell">Policy</th>
+                        <th class="hidden px-5 py-2.5 text-right font-medium md:table-cell">Tokens</th>
+                        <th class="px-5 py-2.5 text-right font-medium">Started</th>
+                        <th class="py-2.5 pl-2 pr-4"><span class="sr-only">Actions</span></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-hairline">
+                    {% for run in runs %}
+                        {% set counts = steps[run.id.toRfc4122] ?? {} %}
+                        <tr class="hover:bg-slate-50">
+                            <td class="w-full max-w-0 px-5 py-3.5">
+                                <a href="{{ path('app_run_show', {id: run.id}) }}" class="inline-flex max-w-full hover:opacity-80"><twig:ReflexLabel name="{{ run.reflexSnapshot.name }}" /></a>
+                                <div class="mt-1 truncate text-xs text-slate-500">{{ include('run/_trigger.html.twig') }}{{ run.replayed ? ' · replayed model' }}</div>
+                            </td>
+                            <td class="px-5 py-3.5">{{ include('reflex/_run_status.html.twig', {status: run.status}) }}</td>
+                            <td class="hidden whitespace-nowrap px-5 py-3.5 text-xs lg:table-cell">
+                                {{ include('run/_policy_summary.html.twig', {counts: counts}) }}
+                            </td>
+                            <td class="hidden whitespace-nowrap px-5 py-3.5 text-right text-slate-500 tabular-nums md:table-cell">{{ run.tokensUsed is null ? '–' : run.tokensUsed|number_format(0, '.', ',') }}</td>
+                            <td class="whitespace-nowrap px-5 py-3.5 text-right text-slate-500 tabular-nums"><twig:Time :at="run.createdAt" /></td>
+                            <td class="w-px py-3.5 pl-2 pr-4 text-right">
+                                <a href="{{ path('app_run_show', {id: run.id}) }}" title="View run" aria-label="View run of {{ run.reflexSnapshot.name }}"
+                                   class="inline-grid size-8 place-items-center rounded-md border border-hairline text-slate-500 hover:bg-white hover:text-ink">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>
+                                </a>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </twig:Panel>
+{% endblock %}
