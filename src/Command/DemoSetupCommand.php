@@ -49,7 +49,7 @@ final readonly class DemoSetupCommand
         $io->table(['Email', 'Name', 'Can'], array_map(static fn (User $user): array => [
             $user->getEmail(),
             $user->getName(),
-            $user->isAdmin() ? 'approve decisions' : 'see the inbox, not approve',
+            $user->isAdmin() ? 'approve decisions' : 'see decisions, not approve',
         ], $result['people']));
         $io->text(\sprintf('Password: %s', self::DEFAULT_PASSWORD === $password ? $password : 'the one given with --password'));
 

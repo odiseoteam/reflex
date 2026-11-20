@@ -156,5 +156,33 @@
                 "model": "claude-sonnet-5-5"
             }
         }
+    },
+    "order.paid.without.order.shipped/2/support_open_ticket=rejected#1": {
+        "type": "text",
+        "content": "The ticket proposal for PC-1201 was rejected with the note \"Not this time.\" No reason was given, so I haven't proposed it again or tried another way to contact Bruno. The coupon was never proposed because he isn't a subscriber, so nothing else depends on this decision.\n\nOne mistake in my earlier proposal: the reason I gave said the order was paid at 13:41. The event shows it was paid at 04:50 UTC. That didn't change the outcome, but the stated reason was wrong.\n\n**Summary**\n- **Checked:** PC-1201 is paid (28) and not shipped. Bruno is not a subscriber.\n- **Proposed:** One ticket with an apology and a one-day shipping promise. It was rejected.\n- **Not proposed:** The 10% coupon, because it is for subscribers only.\n- **Still open:** The order is still unshipped, so someone may want to check on it.",
+        "signature": null,
+        "phase": null,
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "stop",
+                "raw": "end_turn"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 4,
+                "completion_tokens": 294,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 4032,
+                "cache_creation_tokens": 1880,
+                "cache_read_tokens": 2152,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
     }
 }

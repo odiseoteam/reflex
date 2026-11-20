@@ -30,3 +30,20 @@
         {% endfor -%}
     </div>
 {%- endblock choice_widget_expanded -%}
+
+{%- block checkbox_row -%}
+    {%- set widget_attr = help ? {attr: {'aria-describedby': id ~ '_help'}} : {} -%}
+    <div{% with {attr: row_attr} %}{{ block('attributes') }}{% endwith %}>
+        {{- form_errors(form) -}}
+        <div class="flex items-center gap-2">
+            {{- form_widget(form, widget_attr) -}}
+            {{- form_label(form) -}}
+        </div>
+        {{- form_help(form) -}}
+    </div>
+{%- endblock checkbox_row -%}
+
+{%- block checkbox_widget -%}
+    {%- set widget_class = widget_class|default('size-4 accent-accent') -%}
+    {{- parent() -}}
+{%- endblock checkbox_widget -%}

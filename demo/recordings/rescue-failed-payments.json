@@ -1,0 +1,393 @@
+{
+    "payment.failed[ana@example.com]/1#1": {
+        "type": "multipart",
+        "parts": [
+            {
+                "type": "toolcall",
+                "tool_calls": [
+                    {
+                        "id": "toolu_01639iBxEkG9oKW5Uv1dYLMs",
+                        "name": "shop_find_customer",
+                        "arguments": {
+                            "email": "ana@example.com"
+                        },
+                        "signature": null
+                    }
+                ]
+            },
+            {
+                "type": "toolcall",
+                "tool_calls": [
+                    {
+                        "id": "toolu_01By7L7aJvws9Mfo9h6u4crm",
+                        "name": "support_find_tickets",
+                        "arguments": {
+                            "email": "ana@example.com"
+                        },
+                        "signature": null
+                    }
+                ]
+            }
+        ],
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "tool-call",
+                "raw": "tool_use"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 4,
+                "completion_tokens": 109,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 2782,
+                "cache_creation_tokens": 216,
+                "cache_read_tokens": 2566,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
+    },
+    "payment.failed[ana@example.com]/1#2": {
+        "type": "multipart",
+        "parts": [
+            {
+                "type": "text",
+                "content": "Ana is a subscriber, so she counts as loyal. I'll propose the 10% coupon and won't retry the payment, because the decline was for insufficient funds.",
+                "signature": null,
+                "phase": null
+            },
+            {
+                "type": "toolcall",
+                "tool_calls": [
+                    {
+                        "id": "toolu_01UmaPvYneFnwLNoXd3A8EN5",
+                        "name": "shop_issue_coupon",
+                        "arguments": {
+                            "email": "ana@example.com",
+                            "percent": 10,
+                            "reason": "Loyalty gesture after a failed payment on order PC-1101",
+                            "reflex_reason": "Ana is a subscriber (customer since 2024) with two shipped orders. Her payment for PC-1101 failed, and a 10% coupon with a warm note is the loyal-customer response. I did not propose a retry because the decline was for insufficient funds."
+                        },
+                        "signature": null
+                    }
+                ]
+            }
+        ],
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "tool-call",
+                "raw": "tool_use"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 2,
+                "completion_tokens": 284,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 3185,
+                "cache_creation_tokens": 403,
+                "cache_read_tokens": 2782,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
+    },
+    "payment.failed[ana@example.com]/1#3": {
+        "type": "text",
+        "content": "I've proposed a 10% coupon for Ana García (ana@example.com). It is waiting for a person to approve it, and nothing has been sent yet.\n\n- **Why a coupon:** She is a subscriber and has been a customer since 2024. Her two earlier orders, PC-1041 and PC-1052, both shipped. Her lifetime value is only 50 EUR, but being a subscriber is enough to count as loyal.\n- **Payment not retried:** Order PC-1101 (25 EUR) failed with `card_declined: insufficient_funds`, and a retry would fail again.\n- **Tickets:** She has no existing support tickets, so I didn't open one.\n- **Memory:** There were no earlier decisions to follow.",
+        "signature": null,
+        "phase": null,
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "stop",
+                "raw": "end_turn"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 2,
+                "completion_tokens": 241,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 3518,
+                "cache_creation_tokens": 333,
+                "cache_read_tokens": 3185,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
+    },
+    "payment.failed[ana@example.com]/2/shop_issue_coupon=executed#1": {
+        "type": "text",
+        "content": "A person approved the coupon proposal, and the system emailed Ana the code POLAR-03E696 (10% off). Nothing else depended on that decision, so I took no further action.\n\n**Summary**\n- **Proposed and approved:** a 10% loyalty coupon for Ana García. She is a subscriber, so she counts as a loyal customer.\n- **Not done:** I did not retry the payment for order PC-1101, because the decline was for insufficient funds. I also did not open a ticket, since she is treated as loyal.\n- **Still open:** Order PC-1101 (25 EUR) is still unpaid. Ana will need to pay it herself, for example with another card or once her balance allows.",
+        "signature": null,
+        "phase": null,
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "stop",
+                "raw": "end_turn"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 4,
+                "completion_tokens": 225,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 3903,
+                "cache_creation_tokens": 385,
+                "cache_read_tokens": 3518,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
+    },
+    "payment.failed[ana@example.com]/2/shop_issue_coupon=rejected#1": {
+        "type": "multipart",
+        "parts": [
+            {
+                "type": "thinking",
+                "content": "",
+                "signature": "CAQS9QcKEAgUGAI4AUIIdGhpbmtpbmcSDIEGXZ4oEQtwHxAXGRoMF3oI40EGzIatNZpzIjBsO1tPIlDI5i8EfNICt43u2s6NQhmfVKnIin/2Uc09rUr4EnYraymk+Jrm2xwoMJkqkgcfyo2Qxfl/LWrSij1/2GTV4qZnY5g+ZVIhVEr5K3vM3h4WHEYylGdeac8w6KMVgl+sRrN9UzpwqmDqX75ct5xKjMCKvZBajNV1SuwFg5zPCxya7fLPwflp+jZTjaiCWaa22NzptFqIgYSgK8SlcsY02XpVD2QtjNpRUDFA5kpg47ft0jJZXyFJyS1f1WHbbFNsIa9m0ebBTxbobDN4oYKM79yn7HwceKqBkD3rx7v1nXe6M/rvfGgjH/Hvlu7T/p4tG+aFy7UrjPSyfUgax3R56qe6v4VVg9pHF2TzbWVQ5yAXSAeozVTmdv6WuTJbFMlj4creyheFX/9mbe0zHPwFsSc1eltQajuhIR6kRWgXS8lu/7MNJlicLDMFAd13/gYCQjcQ9NsuHbWQdPr2XbNyDIvazAp+O1IMJrISYPJOJ1S+/YSbrHyoMeqSey7Z4j+scFT7rFrGlx3c6pre7t/++4SKanawlhtD3vg2GBhFdpVnmPKIqlfUx6Swsup6ndO2svcAx05HnOPyWS90Q9kcxnrUkabbNbeitsUU3/2QUAGwWARol4//GaxCD97VuZpjp46SGhNtzGSjEi/cAOHG+sgQXeID33czqNAW7Cu4FdHk6O+0bIYKWpNwbs6ccNYcyrufXbdFLwwCsCRRBitTUgGEdKSqAiVHogkZ8EBa/V5k1DM2Tgay459ZcA6/CFbsl0G1DxyK7cB+1WYAFB11fKwvQqe9PdvUtjDzKVobdwixKKtXiEpllTzbVKO/ugNoUdOGPtBJcMs4cFz2+Paser5cYPiZhmuX49K4IlKizLzc2OCF2KP4Oltbl75JuOry3ywBS5xXuWnIxB/hMDx584v9ziMaEmO/trPZwRvKaXyFYlKN721GlceLalKirZZiJ9fBvdvZQ49ZKvVCoCyiGGUaqLcH4rFiW8GCBAcBlBLoSdybTW1dwA/zpVS+lOOoTTTkzUhFCcdZh8DE7ODqB8tyHjehlzl0+veki2Mau6IFDL4pNCZha3k867a3Q8dFF8chAbLktQ6oAQksf4WOENVkjqT03wCemcilaQavBbLh1zAfRwV9XITqz4W4ONU2A90BfcNBD+4ZuZfEEvD3xBrgVOIMeOTOsVOpDbbHB+2DMkn/lbCWRml+eeGKgxrluXPZnlePjyzh0sXvk56yIt6+NCMFPeUOdBwUoPhZc81XU5wCmce5x1iZ7XP/lDfpchgB"
+            },
+            {
+                "type": "text",
+                "content": "The coupon proposal for Ana García was rejected with the note \"Not this time\", so I'm not proposing it again. I didn't propose anything else.\n\n- **Payment retry:** I didn't propose one. The decline was for insufficient funds, and a retry would fail again.\n- **Card-update ticket:** I didn't propose one. My instructions only call for that ticket with non-loyal customers, and Ana is a subscriber. The rejection also didn't ask for a different action.\n- **Order PC-1101:** It is still in `payment_failed`, and Ana hasn't been contacted. If you want her to hear from us, for example with a card-update request, tell me and I'll propose it.",
+                "signature": null,
+                "phase": null
+            }
+        ],
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "stop",
+                "raw": "end_turn"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 4,
+                "completion_tokens": 347,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 3883,
+                "cache_creation_tokens": 3883,
+                "cache_read_tokens": 0,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
+    },
+    "payment.failed[bruno@example.com]/1#1": {
+        "type": "multipart",
+        "parts": [
+            {
+                "type": "toolcall",
+                "tool_calls": [
+                    {
+                        "id": "toolu_01NeRxhxWt6r3zx5ekmnsqrX",
+                        "name": "shop_find_customer",
+                        "arguments": {
+                            "email": "bruno@example.com"
+                        },
+                        "signature": null
+                    }
+                ]
+            },
+            {
+                "type": "toolcall",
+                "tool_calls": [
+                    {
+                        "id": "toolu_01CP8MSTJRzxFBdgaqKEgzkC",
+                        "name": "support_find_tickets",
+                        "arguments": {
+                            "email": "bruno@example.com"
+                        },
+                        "signature": null
+                    }
+                ]
+            }
+        ],
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "tool-call",
+                "raw": "tool_use"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 4,
+                "completion_tokens": 111,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 3210,
+                "cache_creation_tokens": 644,
+                "cache_read_tokens": 2566,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
+    },
+    "payment.failed[bruno@example.com]/1#2": {
+        "type": "multipart",
+        "parts": [
+            {
+                "type": "thinking",
+                "content": "",
+                "signature": "CAQSqwYKEAgUGAI4AUIIdGhpbmtpbmcSDLbwaAVyKZs1punVDBoMvE0qtN/jsXnh7XLuIjBIGUUTuau17tyN5oEJXAx2EX94kgKDCX2fkWVeu2cuIb+Q/om+LJTtNjBvDA06dNIqyAXxUwmz+axrO43Qpp61wItLsh2kOais0X4b3CZhl9wZjVExDkku9smImiTw9ZB51nI93RsdVLIVQdE4CV2USKuPmTmEVBt6Z1+96QOGOwjsTEgc6/OMeIRasepDMFhcswRXSs0ZjbAnn+SMf2R1hmY6hVZy8gmRYjUyfIrAgpYjmxvEll/AQ4Ot4uiQiUhEIqgr9uQE778E1eQRqQ4JuTu14jCvsbCIgkENF30xRIu90qcLnXuoH1WR160X7lo7IyEmIMmMbakJU025CQ6BH7EAjzjl6w3Wofa9r5kWPxT1f7foCg0bGAwVHYpyhzpFNMXBIL3Z+anm9Bf6IANbigg/NCNSaREgdp3gTB/Pne+RWptHuw3zRQlER8zJu8+Kf1zUuxCDyZhl0Vi5UfMcpawaRZL+j+BgzFc+92S9YiDEZLWUYE74iVeEKOEcYfvKbw0IKORhT4QNd2IuV9zciiy9BpWqBIJ3B9QBCvlIDA03ERMDl4RpNWrzwn5Y49T7/dhzbvndMkhRkAXzBum9MGyKJzg13KSfLtRwedjXLuPU31M4ua3WGkMnLna+KgDngMFheYOjMmIZa+H0WGxPP99AvXIXNF6ECNXbKzPtbkzGPEfU/OlW72c1nn2BJEtbAAhWOF//FKo2EUo301EyHC5Mzx7vfkZQL704wxkUubSHT9GC9jSyvjTvN+Sh/irHMgpjnFjdbqBpUGD8PNQCWcZMEhTs9fmJSQHngSyUpu8AJJHi2puycctk51OchvtJ57vK7jIqQXM+tQILPOsdEq9n5C+SQv7PbfuUWhee4gIR/V2/8iDZmMlCSb4ETC3jK+DR+sWTxrV6z8PNZ+yUrZVJJhIPLATlgaasYNEStA5zVZb5M9UtGN0CLrMKq+O6FhSLtCjiGQnIstFVU1UOEW5aHzxoiUrY9NjuRH7NWQdLVT4bnHsZIQGDGAE="
+            },
+            {
+                "type": "toolcall",
+                "tool_calls": [
+                    {
+                        "id": "toolu_01N13vTpNXNMFPEbs8xPxUoV",
+                        "name": "support_open_ticket",
+                        "arguments": {
+                            "email": "bruno@example.com",
+                            "subject": "Your payment for order PC-1102 didn't go through",
+                            "message": "Hi Bruno, thanks for your order PC-1102 (38 EUR). Unfortunately the payment didn't go through with the card you used. Could you update your card details or try a different payment method? Once that's done we'll get your order moving. If you need a hand, just reply to this message. Thanks!",
+                            "reflex_reason": "Bruno is not a subscriber and has a lifetime value of 24 EUR, so he isn't a loyal customer and gets the card-update request, not a coupon. The decline was for insufficient funds, so I'm not proposing a retry."
+                        },
+                        "signature": null
+                    }
+                ]
+            }
+        ],
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "tool-call",
+                "raw": "tool_use"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 2,
+                "completion_tokens": 380,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 3573,
+                "cache_creation_tokens": 363,
+                "cache_read_tokens": 3210,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
+    },
+    "payment.failed[bruno@example.com]/1#3": {
+        "type": "text",
+        "content": "I proposed opening a ticket for Bruno Díaz. It is only a proposal and has not run. It needs a person's approval first.\n\n- **Customer:** Bruno is not a subscriber. His lifetime value is 24 EUR, and he has one shipped order and no earlier tickets. That doesn't meet the loyal-customer bar, so I didn't propose a coupon.\n- **Proposal:** The ticket asks him to update his card or use another payment method for order PC-1102 (38 EUR).\n- **No retry:** The decline was for insufficient funds, so I did not propose retrying the payment. It would fail again.\n- **Precedent:** The two earlier rejections were coupon proposals for Ana, a subscriber. They don't apply to Bruno's case, so I didn't act on them.\n\nThe run now waits for the decision.",
+        "signature": null,
+        "phase": null,
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "stop",
+                "raw": "end_turn"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 2,
+                "completion_tokens": 272,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 4002,
+                "cache_creation_tokens": 429,
+                "cache_read_tokens": 3573,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
+    },
+    "payment.failed[bruno@example.com]/2/support_open_ticket=executed#1": {
+        "type": "text",
+        "content": "The ticket proposal was approved and executed. It opened ticket T-502 and emailed Bruno Díaz (bruno@example.com), asking him to update his card or use another payment method for order PC-1102 (38 EUR).\n\nNothing else depends on that decision, so I have no further actions.\n\n- **Proposed:** Opening a ticket to ask for a card update. I chose this over a coupon because Bruno isn't a subscriber and his lifetime value is only 24 EUR.\n- **Not proposed:** A payment retry, because the decline was for insufficient funds. A coupon was also not proposed, for the reason above.\n- **Outcome:** Approved and executed as T-502.",
+        "signature": null,
+        "phase": null,
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "stop",
+                "raw": "end_turn"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 4,
+                "completion_tokens": 224,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 4498,
+                "cache_creation_tokens": 496,
+                "cache_read_tokens": 4002,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
+    },
+    "payment.failed[bruno@example.com]/2/support_open_ticket=rejected#1": {
+        "type": "multipart",
+        "parts": [
+            {
+                "type": "thinking",
+                "content": "",
+                "signature": "CAQS0QYKEAgUGAI4AUIIdGhpbmtpbmcSDJ29jCWyw7Ip9TntvhoMcwqOeMU50LuMNfNpIjD8bT1QHAxPEMYaS0plKxcZPQpqc7JaZWUoFJqf/9GNugLEfNH+8cGQUGGrrhsLV14q7gUXsXR7W6LYurs1oiaCowEa9NxzTC92KPf8OARagtTcKx9oTQwTi/8md0EhznYHFO73P+9BWwLalFKdNOVWBoA0Znlp2oU5xBUHujBmm2frLB80Lsg6zMi7WlmYf/JKUJkCY5AIWAM/lo7wAUHE/a/kW0NuNdaFqLXjcfndtoQY2ysLp/oQhWxs2fOSONSosLtc5JSQqPZw8/v4JSurQptxqFO+T4hdkjIJgbvMxM8dxkqnXQMvJS6rEwXLADd8Il9z5UzXAb5hqq35xpCAKmxQgh3SB5C7JrUkJr52zePjon35dF0bEqxK8OVUW2A06oS+Db92W6NKHjb+HX32nUmgpIzjUgB8XCvhToTCfkcqXpWfeuE2PUjT6MBcvF9s4l59aZmS/59sZ5chKt86JJc12MMGRGHj8r9LCp2aubSo71CSrBaIjorg2a02pz6PGhbqMMNV7MRjcZBub/OhIS39SBvfzx90luiVyvJXm41w7EPWshyZuZ8IJCB0XCDg7p3BtewP1Jct7/P3kvtQsSB8Isp68WheQvKAHlSxSjAMsuQjKhYhwfjTVQ3cQpFiMUKHweZCwp7Ge51aWtcI1hyjZ6vbgEGmkM4FwvQun18Dx27YCT3umdf0Bim4lnUg1rgnmJ0skx1LQkjvOWQ5bAp95gRq9auQmNeq/3+LKsFXAKgej9TkdQlCExKjlbbTMn9ng83V6uaUQWfNDxLF7P2kO3kmX59B+GSJCtsGBy0ivcCWY0/kiRXNXWHvyihcBJpAGlZoiKxD23KiC/GQ84g8wL1QlURdJ3IhzxgRxQR1PN5+7pquuiKal8DJuc8XI7ID5JIvd6SYLi1V2SUwsFkvp7F0NNzNehzXHC42ZtL0K+QZBvJsAIdvpUrgJDdJriaT4+Ab0f0lCG4fA2bf/1xTjIIQmsg8WaIdYeiT4s0UkG4+Rxyj/e1AXewV2Luk7OgwF9FY9ZfONAy7JcvTEwpfQkBE+dZh9+nWlqiTTYgYAQ=="
+            },
+            {
+                "type": "text",
+                "content": "The ticket proposal for Bruno Díaz was rejected (\"Not this time.\"). I won't propose it again or try another route.\n\n- **Existing ticket:** Ticket T-502 already exists for order PC-1102. It was created at 04:50:40, just before the event, and its message is the same card-update request. That may be why the new ticket wasn't wanted, though the note doesn't say. I'm only guessing.\n- **Coupon:** Bruno isn't a loyal customer (not a subscriber, 24 EUR lifetime value), so a coupon doesn't fit.\n- **Retry:** The decline was for insufficient funds, so I didn't propose a retry.\n\n**Summary:** I looked up Bruno and his tickets and proposed one action, opening a card-update ticket. A person rejected it, and nothing was executed. Order PC-1102 stays in `payment_failed`, and T-502 is still pending with the customer.",
+                "signature": null,
+                "phase": null
+            }
+        ],
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "stop",
+                "raw": "end_turn"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 4,
+                "completion_tokens": 346,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 4988,
+                "cache_creation_tokens": 2422,
+                "cache_read_tokens": 2566,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
+    }
+}

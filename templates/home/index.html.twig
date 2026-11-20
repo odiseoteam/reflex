@@ -44,75 +44,62 @@
         </div>
     {% endif %}
 
-    <div class="grid items-stretch gap-4 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]">
-        <div class="grid content-start gap-4">
-            <div class="grid grid-cols-2 gap-4">
-                <div class="rounded-xl border bg-white px-5 py-4 {{ stats.pendingDecisions > 0 ? 'border-amber-200' : 'border-hairline' }}">
-                    <div class="text-sm text-slate-500">Pending decisions</div>
-                    <div class="mt-0.5 text-3xl font-semibold tracking-tight tabular-nums {{ stats.pendingDecisions > 0 ? 'text-amber-700' }}">{{ stats.pendingDecisions }}</div>
-                    <div class="text-xs text-slate-500">to approve or reject</div>
-                </div>
-                <div class="rounded-xl border border-hairline bg-white px-5 py-4">
-                    <div class="text-sm text-slate-500">Runs today</div>
-                    <div class="mt-0.5 text-3xl font-semibold tracking-tight tabular-nums">{{ stats.runs }}</div>
-                    <div class="text-xs text-slate-500">{{ stats.finishedRuns }} finished · {{ stats.waitingRuns }} waiting</div>
-                </div>
-                <div class="rounded-xl border border-hairline bg-white px-5 py-4">
-                    <div class="text-sm text-slate-500">Automatic actions</div>
-                    <div class="mt-0.5 text-3xl font-semibold tracking-tight tabular-nums">{{ stats.toolCalls }}</div>
-                    <div class="text-xs text-slate-500">ran today without approval</div>
-                </div>
-                <div class="rounded-xl border border-hairline bg-white px-5 py-4">
-                    <div class="text-sm text-slate-500">Tokens today</div>
-                    <div class="mt-0.5 text-3xl font-semibold tracking-tight tabular-nums">{{ stats.tokens|number_format(0, '.', ',') }}</div>
-                    {% if stats.budgetPercent is not null %}
-                        <div class="mt-2 h-1 overflow-hidden rounded bg-slate-100"><div class="h-full bg-accent" style="width: {{ stats.budgetPercent }}%"></div></div>
-                    {% else %}
-                        <div class="text-xs text-slate-500">no daily budget set</div>
-                    {% endif %}
-                </div>
-            </div>
-
-            <twig:Panel title="Pending decisions" subtitle="Actions waiting for your approval." flush>
-                <twig:block name="actions"><a href="{{ path('app_decision_index') }}" class="shrink-0 text-sm font-medium text-accent hover:underline">All decisions</a></twig:block>
-                {% if pending is empty %}
-                    <p class="px-5 py-8 text-center text-sm text-slate-500">Nothing waits for you.</p>
-                {% else %}
-                    <table class="w-full text-sm">
-                        <thead class="bg-slate-50 text-left text-xs text-slate-500">
-                            <tr>
-                                <th class="px-5 py-2.5 font-medium">Decision</th>
-                                <th class="hidden px-5 py-2.5 font-medium xl:table-cell">Tool</th>
-                                <th class="px-5 py-2.5 font-medium">When</th>
-                                <th class="px-5 py-2.5"><span class="sr-only">Actions</span></th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-hairline">
-                            {% for decision in pending %}
-                                <tr>
-                                    <td class="w-full max-w-0 px-5 py-3.5">
-                                        <div class="line-clamp-2 font-medium">{{ decision.question ? decision.question.message : decision.reason }}</div>
-                                        <twig:ReflexLabel name="{{ decision.run.reflexSnapshot.name }}" class="mt-1" />
-                                    </td>
-                                    <td class="hidden px-5 py-3.5 xl:table-cell"><code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-700">{{ decision.toolName }}</code></td>
-                                    <td class="whitespace-nowrap px-5 py-3.5 text-slate-500 tabular-nums"><twig:Time :at="decision.createdAt" format="time" /></td>
-                                    <td class="w-px whitespace-nowrap px-5 py-3.5 text-right">
-                                        <twig:Button href="{{ path('app_decision_show', {id: decision.id}) }}" size="sm">View details</twig:Button>
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                {% endif %}
-            </twig:Panel>
+    <div class="mb-4 grid grid-cols-2 gap-4 lg:grid-cols-4">
+        <div class="rounded-xl border bg-white px-5 py-4 {{ stats.pendingDecisions > 0 ? 'border-amber-200' : 'border-hairline' }}">
+            <div class="text-sm text-slate-500">Pending decisions</div>
+            <div class="mt-0.5 text-3xl font-semibold tracking-tight tabular-nums {{ stats.pendingDecisions > 0 ? 'text-amber-700' }}">{{ stats.pendingDecisions }}</div>
+            <div class="text-xs text-slate-500">to approve or reject</div>
         </div>
+        <div class="rounded-xl border border-hairline bg-white px-5 py-4">
+            <div class="text-sm text-slate-500">Runs today</div>
+            <div class="mt-0.5 text-3xl font-semibold tracking-tight tabular-nums">{{ stats.runs }}</div>
+            <div class="text-xs text-slate-500">{{ stats.finishedRuns }} finished · {{ stats.waitingRuns }} waiting</div>
+        </div>
+        <div class="rounded-xl border border-hairline bg-white px-5 py-4">
+            <div class="text-sm text-slate-500">Automatic actions</div>
+            <div class="mt-0.5 text-3xl font-semibold tracking-tight tabular-nums">{{ stats.toolCalls }}</div>
+            <div class="text-xs text-slate-500">ran today without approval</div>
+        </div>
+        <div class="rounded-xl border border-hairline bg-white px-5 py-4">
+            <div class="text-sm text-slate-500">Tokens today</div>
+            <div class="mt-0.5 text-3xl font-semibold tracking-tight tabular-nums">{{ stats.tokens|number_format(0, '.', ',') }}</div>
+            {% if stats.budgetPercent is not null %}
+                <div class="mt-2 h-1 overflow-hidden rounded bg-slate-100"><div class="h-full bg-accent" style="width: {{ stats.budgetPercent }}%"></div></div>
+            {% else %}
+                <div class="text-xs text-slate-500">no daily budget set</div>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="grid items-stretch gap-4 lg:grid-cols-2">
+        <twig:Panel title="Pending decisions" subtitle="Actions waiting for your approval." flush>
+            <twig:block name="actions"><a href="{{ path('app_decision_index') }}" class="shrink-0 text-sm font-medium text-accent hover:underline">All decisions</a></twig:block>
+            {% if pending is empty %}
+                <p class="px-5 py-8 text-center text-sm text-slate-500">Nothing waits for you.</p>
+            {% else %}
+                <ol class="divide-y divide-hairline" aria-label="Pending decisions">
+                    {% for decision in pending %}
+                        <li class="flex items-start gap-4 px-5 py-3.5">
+                            <div class="min-w-0 flex-1">
+                                <p class="line-clamp-2 text-sm">{{ decision.question ? decision.question.message : decision.reason }}</p>
+                                <div class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
+                                    <twig:ReflexLabel name="{{ decision.run.reflexSnapshot.name }}" />
+                                    <span class="tabular-nums"><twig:Time :at="decision.createdAt" format="time" /></span>
+                                </div>
+                            </div>
+                            <twig:Button href="{{ path('app_decision_show', {id: decision.id}) }}" size="sm" class="shrink-0">View details</twig:Button>
+                        </li>
+                    {% endfor %}
+                </ol>
+            {% endif %}
+        </twig:Panel>
 
         <twig:Panel title="Latest runs" subtitle="What reflexes did, and what their policy let them do." flush>
             <twig:block name="actions"><a href="{{ path('app_run_index') }}" class="shrink-0 text-sm font-medium text-accent hover:underline">All runs</a></twig:block>
             {% if runs is empty %}
                 <p class="px-5 py-8 text-center text-sm text-slate-500">No runs yet. Simulate an event to see a reflex run.</p>
             {% else %}
-                <ol class="divide-y divide-hairline">
+                <ol class="divide-y divide-hairline" aria-label="Latest runs">
                     {% for run in runs %}
                         <li>
                             <a href="{{ path('app_run_show', {id: run.id}) }}" class="grid gap-1 px-5 py-3 hover:bg-slate-50">

@@ -30,7 +30,7 @@
     <div class="grid items-start gap-6 lg:grid-cols-[minmax(0,1.6fr)_minmax(0,1fr)]">
         <div class="grid gap-6">
             <twig:Panel title="Instructions" subtitle="What the agent is told to do when it fires.">
-                <p class="whitespace-pre-line text-sm text-slate-700">{{ reflex.instructions }}</p>
+                <div class="markdown text-sm text-slate-700">{{ reflex.instructions|markdown_to_html }}</div>
             </twig:Panel>
 
             <twig:Panel title="Tool policy" subtitle="Enforced in code, not in the prompt: forbidden tools don't exist for the agent, and tools that need approval only record a proposal." flush>

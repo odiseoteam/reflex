@@ -96,7 +96,7 @@ final class RunControllerTest extends WebTestCase
         self::assertSelectorTextContains('main', 'Event received untrusted data');
         $titles = $crawler->filter('main ol > li h2')->each(static fn ($title): string => $title->text());
         self::assertSame(['Event received', 'Ran', 'Blocked', 'Proposed', 'Decision'], $titles);
-        self::assertSelectorTextContains('main aside', 'Waiting for people');
+        self::assertSelectorTextContains('main aside', 'Waiting for a human decision');
         self::assertSelectorTextContains('main aside', 'Blocked 1 outside the policy');
         self::assertSelectorTextContains('main', 'Not in the policy: the agent asked for a tool it is not allowed to use.');
     }

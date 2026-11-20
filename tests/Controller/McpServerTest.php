@@ -150,6 +150,8 @@ final class McpServerTest extends WebTestCase
 
         $this->client->request('GET', '/apps');
         self::assertSelectorTextContains('main section li', 'Test client');
+        self::assertSelectorCount(2, '[data-controller="clipboard"] button[data-action="clipboard#copy"]');
+        self::assertSelectorTextContains('[data-controller="clipboard"] code', 'http://localhost/mcp');
         $this->client->submitForm('Disconnect');
         $this->client->followRedirect();
         self::assertSelectorTextContains('main', 'No apps connected.');

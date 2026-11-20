@@ -18,8 +18,8 @@
         {% set route = app.request.attributes.get('_route', '') %}
         {% set sections = [
             {label: 'Decisions', route: 'app_decision_index', prefixes: ['app_decision_']},
-            {label: 'Reflexes', route: 'app_reflex_index', prefixes: ['app_reflex_']},
             {label: 'Runs', route: 'app_run_index', prefixes: ['app_run_']},
+            {label: 'Reflexes', route: 'app_reflex_index', prefixes: ['app_reflex_']},
             {label: 'Connections', route: 'app_connection_index', prefixes: ['app_connection_']},
             {label: 'Apps', route: 'app_connected_apps', prefixes: ['app_connected_app']},
         ] %}

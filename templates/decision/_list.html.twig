@@ -16,7 +16,7 @@
             {% for decision in decisions %}
                 <tr class="hover:bg-slate-50">
                     <td class="w-full max-w-0 px-5 py-3.5">
-                        <a href="{{ path('app_decision_show', {id: decision.id}) }}" class="line-clamp-2 font-medium hover:underline">{{ decision.question ? decision.question.message : decision.reason }}</a>
+                        <a href="{{ path('app_decision_show', {id: decision.id}) }}" class="line-clamp-2 hover:underline">{{ decision.question ? decision.question.message : decision.reason }}</a>
                         <twig:ReflexLabel name="{{ decision.run.reflexSnapshot.name }}" class="mt-1" />
                     </td>
                     <td class="hidden px-5 py-3.5 lg:table-cell"><code class="rounded bg-slate-100 px-1.5 py-0.5 font-mono text-xs text-slate-700">{{ decision.toolName }}</code></td>

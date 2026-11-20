@@ -1,0 +1,10 @@
+{# A line of code with a button that copies it #}
+{% props text %}
+<div data-controller="clipboard" {{ attributes.defaults({class: 'flex items-center gap-2 rounded-lg bg-slate-50 py-1 pl-3 pr-1'}) }}>
+    <code data-clipboard-target="source" class="min-w-0 flex-1 break-words py-1 font-mono text-xs leading-5">{{ text }}</code>
+    <button type="button" title="Copy" aria-label="Copy to clipboard" data-clipboard-target="button" data-action="clipboard#copy"
+            class="grid size-7 shrink-0 place-items-center rounded-md text-slate-500 hover:bg-white hover:text-ink">
+        <svg data-clipboard-target="copyIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="8" y="8" width="13" height="13" rx="2"/><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"/></svg>
+        <svg data-clipboard-target="done" hidden width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-emerald-600" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>
+    </button>
+</div>

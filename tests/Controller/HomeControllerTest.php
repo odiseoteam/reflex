@@ -79,17 +79,17 @@ final class HomeControllerTest extends WebTestCase
         self::assertSelectorTextContains('main', 'Automatic actions 1 ran today without approval');
         self::assertSelectorTextContains('main', 'Tokens today 400');
 
-        self::assertSame('Loyal customer whose card failed.', trim($crawler->filter('section')->eq(0)->filter('tbody td')->eq(0)->filter('div')->eq(0)->text()));
+        self::assertSame('Loyal customer whose card failed.', $crawler->filter('ol[aria-label="Pending decisions"] li p')->text());
         self::assertCount(1, $crawler->filter('a:contains("View details")'));
         self::assertSelectorNotExists('main h2:contains("Reflexes")');
 
-        $runs = $crawler->filter('main ol li')->each(static fn ($item): string => $item->text());
+        $runs = $crawler->filter('ol[aria-label="Latest runs"] li')->each(static fn ($item): string => $item->text());
         $time = static fn (Run $run): string => $run->getCreatedAt()->setTimezone(new \DateTimeZone('UTC'))->format('H:i');
         self::assertContains(\sprintf('Rescue failed payments Waiting Webhook · payment.failed · %s 1 proposed', $time($waiting)), $runs);
         self::assertContains(\sprintf('Rescue failed payments Succeeded Webhook · payment.failed · %s 1 ran', $time($finished)), $runs);
 
         $utc = $finished->getCreatedAt()->setTimezone(new \DateTimeZone('UTC'))->format('Y-m-d\TH:i:s\Z');
-        self::assertSelectorExists(\sprintf('main ol time[datetime="%s"][data-controller="local-time"][data-local-time-format-value="time"]', $utc));
+        self::assertSelectorExists(\sprintf('ol[aria-label="Latest runs"] time[datetime="%s"][data-controller="local-time"][data-local-time-format-value="time"]', $utc));
     }
 
     private function user(): User

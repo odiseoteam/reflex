@@ -57,8 +57,8 @@
                 </div>
             {% elseif run.status.value == 'waiting' %}
                 <div class="rounded-xl border border-amber-200 bg-amber-50 px-5 py-4">
-                    <h2 class="font-semibold text-amber-900">Waiting for people</h2>
-                    <p class="text-sm text-amber-900">The run resumes once every proposal is decided. <a class="underline" href="{{ path('app_decision_index') }}">Go to decisions</a></p>
+                    <h2 class="font-semibold text-amber-900">Waiting for a human decision</h2>
+                    <p class="text-sm text-amber-900">The run resumes once every proposed action is approved or rejected.</p>
                     {% if run.output %}<div class="markdown mt-3 rounded-lg bg-white/60 p-3">{{ run.output|markdown_to_html }}</div>{% endif %}
                 </div>
             {% elseif run.output %}

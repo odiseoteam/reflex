@@ -198,5 +198,119 @@
                 "model": "claude-sonnet-5-5"
             }
         }
+    },
+    "resource.updated/2/shop_refund_order=executed,support_reply_ticket=rejected#1": {
+        "type": "multipart",
+        "parts": [
+            {
+                "type": "thinking",
+                "content": "",
+                "signature": "CAQS5wgKEAgUGAI4AUIIdGhpbmtpbmcSDIMQVJaAhXoMChRDJBoMK55dMy9+o6xEMqeGIjAEp0L/2JV50WLyAv80h10nGvyQ2lAY6xxQjK1thAYfX7F87RXXGAfbNxcbMhHL89IqhAiuhxuUoS8X9rvAGAYL4SR347UKhabETrYt+pj5HUYOt9iAG5om+RupmU00Jz9ZCnH9LXMUOUbhj4SnLScA93H/ZtnCM0yqnAYNJrhMWHjyWj7Dbl2S2Idif8dRD0o+1zSZ5hY+6w/MDWTOLpaf70nW8J/GMA+FJFa+AC8/tg/RsWVPp3Dd0ZHlJUJ9WDmavr5N1AVmG++zw4HrEo8rbig5PfgHWz0r7qPcXfIRnUQ8EU+rZSInIZxqe+5x5AcZP9CFkpoMkoTeidQHKAEHPtgmQsSS5jIGl8eBRaEnDt1bFx5izhzlXkeGk5a+WewOffyBBjyFOT0Zuo80Hfs0OvLNjKLY7TrfKEqyGSQRWH4YGV4xPuX6aWpuTJuOMnXe5du+fqWaSR/2GM/697XwXg9r4B9r5yU8q0wLKxO7HM9sVCwNHvjs0o4SqGeDiO5R91xJezs46sS7lasFYPw4+pDolMes5v/hC6/mQeSm9P7N+jSVuFS5gs9GJ44eqipEc1gaO54P/h2GuKte3pEIQBRNvo4nun72GmOwftowP9RcJQsE8hYms8GKlnMW3qjI/R5FXrkPRSkBU1yKedLWh2JjY+35j4XkODrBEMLv1Lpaikyta3xxFu65NqRQ1QnJ2iRZNJTYz47qfuGfNLLTm0mnOpModwJTw7kFtejy6c0WdMMYa8y2g7bvc6Sojv4efkjaCTZbdtfDWwmITwIgoACI/3q7WL/1TeXZqthyZYc9ySWt/E4ruyafADdisoRzBdWx1k8E3POuRDFVOJ9uqLRHXRnnW3ykUhDb+lmF10XUAFkhPpYISvBzI4LXQOr1CSyD0hJRdAdCdVR6wM80eDIa27OHlMfT6/AAkQ22DULh3a+Gdl+ucT5lzMk7pRy6eikSn/05TonyQkcNZJSFUrXZ/3KJuwjBPysQ1xjDZFsWb7xYnZBnroNBNoDhe5ElkFExv6xGbIu6hkvpELjBqfbiNrOyjKt3amJtCfY6vjOTnvAWy5bMTTNBOWT39OZhfc40YWg5O9/LtdbjcXKDun7IlVDgCAj/3A4VUxim5HHz98frmuCa1XiXSZWGxTnURweq/U+T9mIvuBuYMTBKZ6VUGRaMFP0lwY/fqDX55owvYvtclryd+ojSb2lvwtRIYkWUOOXVicZEknLAon4hbsY1/EKtRyN3OGrAvrM6lVyFYHNzArpffOnMoRUOZIsnD2Ai/BEReczyyIpfAjr+I2dQXLZkIW6gdayxmejxPqjfLYI1B2kOgy/TDXMjMNomBzmNUpmzrhfNzPEBqjj2nPhwxUZMUw8GUJkDeFoDQExFGEUhsReRz4eWnGu/1a7r8mglSsmZUW4YqiLCUMVNeiWegH5p4hgB"
+            },
+            {
+                "type": "text",
+                "content": "The refund went through, and the reply was rejected. I haven't proposed another reply.\n\n- **Refund (executed):** 10.00 EUR on order PC-1055 was refunded to Carla's card. The approver chose card, so the \"card or store credit\" choice I mentioned in the reply no longer applies.\n- **Reply (rejected):** The note was only \"Not this time\", with no reason. I didn't resend it or a reworded version, because I can't tell what the approver objected to. Carla hasn't been told anything yet, and T-501 is still open.\n\nA person needs to send Carla a reply. It should confirm that 10.00 EUR went back to her card for the spilled espresso. If you tell me what was wrong with the first draft, I can write a new one.",
+                "signature": null,
+                "phase": null
+            }
+        ],
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "stop",
+                "raw": "end_turn"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 4,
+                "completion_tokens": 368,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 5659,
+                "cache_creation_tokens": 5659,
+                "cache_read_tokens": 0,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
+    },
+    "resource.updated/2/shop_refund_order=rejected,support_reply_ticket=executed#1": {
+        "type": "multipart",
+        "parts": [
+            {
+                "type": "thinking",
+                "content": "",
+                "signature": "CAQSsQgKEAgUGAI4AUIIdGhpbmtpbmcSDIeAY8cbey6APofGEBoMweTDM8+b30tnDEXfIjCm/Z8Dk0AMUXMeSVK/GatWAv1AgFVSY9elsh/DlqKelGN5DveQQ+yCVJbr/3cHVncqzge1jKihLDzEMp9I1Qd2NYzfvLw3awctluKcpwH5qgxf03PFGdH76vKNkboGHK5rAvjCIdfQwOYsMuoovg/57zVDHGGoItZ9zeP4Jer5rmgQaidzYglP/n6j3Mv1Y9QG0gp+mvNWSukia0Di+xkIdzDMj2w7seiAvU49kOxnxAk36f1nWuEJ4toPX3HdTJxUhokfpqV/8N//4K/N2U1DqQdNqihvTzZV0u51UrNU9m7S4ZQS0J1/z+X0aix9W5bMYFw752/VkNFpmTMDacbRPYUwTr0QeHha2JDADx/bLcPwNSduhAXGJ60Nb1WXT1k+zsibrgBeTE/DpUd29MRQtG1ndb5NO+VqLVDzyUwiDeeZsrDJvsjC25hQAsDKt1cJcT7l+TECL5ggbsDAY3linbM1TW5MdNZfcmuU5XHa0yRlU7coLUv0pdSBCj4NJoyZZ8r9VE7JzwLGRFQUlFUMAY6/dGupOEOc3NDHHOGCjAn/v/kceqXTh0iyTyrcUak7Qg6WywWvggmQ52CnRQcFxlFNje6DlzbZWkLgJ/KBdccA9mIxEE4gxVb6iKDLgT6GhY9v7WeZlkPi7fQr/v63M4X3ru/zXMHGb097gDBsuX40mXiIzjwDYnL2y6isp09H2pX/V/7hnEc7HsMt9Zs0Z8u0NK6qsop48aRzU/lWn0vizMd0vD5ykH+TUffrzUlHa9UdYQOjC0irOm3PQSqZdkMsaU6EV/q/8Tq/55jNlSS52ITxLcKNCWU+/8Bx3m+26hsMp0BJ+6yvZ7rlzw/gdB0Rk6Y6jUCrbUHptG+YGLukuBLLxN9AambjrQI8ef1eGCIShU5tYADrbEGk8yHH/XZs6JgqQRaGTxsSFuD6jiyzTzA5CrM1KHJKo3aF3vGdYQbTs6n6MtSvkHDAE0++aWJuMtMJtsI8bXTQUseqIuOSre1X6BJZq5YdpX90OWAOp99xiCVbKiIkM+DE5uYfYeE+sc47gkA4yXMYzavaFjSeibAOa1e+yZINsPonfvoPZ7ew0gb9BKMrOhxyPN0DsNYqtteFMmWh1v0qTq8lWes/kxKCovD/XtTblkFB2esSFAHV98uSz1V2vlaj64Hg6r3SyQHI0Jm4Ho8iM5uFIeb2Osm4FnBZyZeWY6z7S66w5XpGh6jAP+ZTGhAPkidNJdh0zrwciOU+3v974auHfx321EAS99W7oqvf5p4JrMVcCr12hLTz39IWtDIPBGn569xNczujA/16i4J6GcIjLTgClUSsmJM1Y/nPVknUFpxKk0rww6bEsgoeMrZ8YFjA/hgB"
+            },
+            {
+                "type": "text",
+                "content": "The reply to Carla went out, and the refund proposal was rejected.\n\n- **Reply:** It was approved and sent on T-501, and the ticket is now pending. It tells Carla a refund for the lost part of the bag is being arranged.\n- **Refund:** The 10 refund on PC-1055 was rejected with the note \"Not this time.\" I won't propose it again.\n- **Likely reason:** The order already shows a refund of 10 to the card (re_9717, made 2026-11-20 05:05). That matches an earlier approved refund for the same damage, so the rejection was probably to avoid paying twice. The note doesn't say that, so it's my inference.\n- **For the team:** The sent reply says a refund is coming and that she can pick card or store credit, but the refund has already gone to her card. Someone may want to follow up with Carla and confirm that refund, so she isn't waiting on a second one. I didn't propose a follow-up, since the instructions don't cover it and the rejection suggests nothing more is needed.",
+                "signature": null,
+                "phase": null
+            }
+        ],
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "stop",
+                "raw": "end_turn"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 4,
+                "completion_tokens": 449,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 6937,
+                "cache_creation_tokens": 6937,
+                "cache_read_tokens": 0,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
+    },
+    "resource.updated/2/shop_refund_order=rejected,support_reply_ticket=rejected#1": {
+        "type": "multipart",
+        "parts": [
+            {
+                "type": "thinking",
+                "content": "",
+                "signature": "CAQSnwcKEAgUGAI4AUIIdGhpbmtpbmcSDEeUh8xeYO0iDIMsfRoM+XC42Xk+UYNrG9MMIjDMo8VSASPe2P/zaC7zKfANnS/CoV5Mz/0zMSf0fr4nIRrRtnkxrln2Td5wl+iV5OoqvAbapsPOO1/rsjWlVBVY6ho6L784RGXJfUnJGbaSu0jZz6ZU3BJ4/GxJjnXEEaw4WDGGDmFzLqIcTRZ1Ff51BFZyaECoaV0IeyZeYABDwVn5SEw1xWZMPZO2/fBhmjOu76RXqpTovDebkccilXnoVo39SVa2WtZ8E5/ZZFEMuA5gMQOBD1NvASpvA8h6WG4/W2CmRhU40EC2j5BEPD5zwBr73xwJGE/BiiECZZYc7lYONzm+wv1GlVoYde4ITlSkzEpg5DB8xYlvaZ3u0utMGZyk/J+IuSBrn7XmDgQDOb9OwCcsiHpgCkw6S2zPosWODSwH/DkSXDmIgIPIvEOhQGBTdknMSuJWLQt5eFdCpPpkr5fiJiVsbKsVN130ofu8mjQYMNxVgwOwL3XXkxLKU+wXktwrH50nrVDSlE+vf44WL9CoIXWxTRfLsHim8bqKctxSvgxefMc1y1YQgxwYI9zhYuOYxsiN0vAZ+ou6ELfqjY+GLu+Z2pm7JowCAlDLowcvw9PjgDS2okaqjUuAerMw68JH/KpiSf+Te4jfJQGnjwW/QhQxdmIeVs0MsPRf2LN218V0z2ML8jhwu/C75qFh5YWLM/7dSnV3H+RHWqfYDrnRCx62xuagKthhHNLifEo9JS/e1APdp3FmVHyIXeOxiN6euuWBv25jGkP3Q+fGwj0IwS4/5a4seDOXLCVlZI4SIHg+sVUbZB1m/nU5LMG/0RxQRG2ckocTLW6SWvqb28rBAp5E6TzMn336uux5UWRsk9k1pURiPKipMeNEZ7MYaK4aExdaKQb/5rNgJHLzWqGLkbnTk9z9QA2DtnXU/VG4Ybsk7AUHU1aa1quG4Z+ecDbxGWUa7Cmi+h7XRrfv/dMMySNynvjJ507MrConAPn0CpPg3/a1oXBX1iQUssaLOTWST5U4nC3hJu3XLgIErVkacNWsWuCBnY0RejbD41hlaOBkluv42a4TF4gWYUqT6R64VITGU9CC0NppJKf068703AC/w4RQEShdtqjdpSvV1nmbI2Qzh1Ocr9TIbh75zSqNkbdl+tIGAy+IMcEnkHEtcqrheVHVn2HjNSIlIweXSaOAG4H0nnlDfGUYAQ=="
+            },
+            {
+                "type": "text",
+                "content": "Both proposals were rejected with the note \"Not this time\", so I'm stopping here. I won't re-propose either one.\n\n- **Refund of 10 on PC-1055:** Rejected. The order already shows a 10 card refund (re_9717, made 2026-11-20 05:05) for the same damage. A second one would have paid the same loss twice. That is probably why it was rejected, though the note doesn't say.\n- **Reply on T-501:** Rejected. The ticket already has an identical agent reply, sent at 05:22:57. The newest customer message is another copy of her photo message.\n\nI sent nothing and changed nothing on the ticket or the order.\n\nCarla has been told a refund is being arranged, and one has been issued. If she asks about the amount or the refund method, a person should answer her with the details of re_9717. I didn't draft that.",
+                "signature": null,
+                "phase": null
+            }
+        ],
+        "metadata": {
+            "finish_reason": {
+                "#type": "finish_reason",
+                "case": "stop",
+                "raw": "end_turn"
+            },
+            "token_usage": {
+                "#type": "token_usage",
+                "prompt_tokens": 4,
+                "completion_tokens": 341,
+                "thinking_tokens": null,
+                "tool_tokens": null,
+                "cached_tokens": 7249,
+                "cache_creation_tokens": 4788,
+                "cache_read_tokens": 2461,
+                "remaining_tokens": null,
+                "remaining_tokens_minute": null,
+                "remaining_tokens_month": null,
+                "total_tokens": null,
+                "model": "claude-sonnet-5-5"
+            }
+        }
     }
 }

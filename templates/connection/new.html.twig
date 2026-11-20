@@ -8,30 +8,34 @@
     <twig:PageHeader title="Connect a server" subtitle="Any MCP server over Streamable HTTP. With OAuth you are sent to its authorization server to sign in." :crumbs="[{label: 'Connections', url: path('app_connection_index')}]" />
 
     {# Turbo can't follow the redirect to another origin for OAuth #}
-    {{ form_start(form, {attr: {class: 'grid max-w-2xl gap-6', 'data-turbo': 'false'}}) }}
-        <twig:Panel title="Server">
-            <div class="grid gap-5">
-                {{ form_row(form.name) }}
-                {{ form_row(form.url) }}
-                {{ form_row(form.auth) }}
+    {{ form_start(form, {attr: {class: 'grid items-start gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]', 'data-turbo': 'false'}}) }}
+        <div class="grid gap-6">
+            <twig:Panel title="Server">
+                <div class="grid gap-5">
+                    {{ form_row(form.name) }}
+                    {{ form_row(form.url) }}
+                    {{ form_row(form.auth) }}
+                </div>
+            </twig:Panel>
+
+            <div class="flex items-center gap-3">
+                <twig:Button variant="primary" type="submit">Connect</twig:Button>
+                <a href="{{ path('app_connection_index') }}" class="text-sm text-slate-500 hover:text-ink">Cancel</a>
             </div>
-        </twig:Panel>
+        </div>
 
-        <twig:Panel title="Bearer token" subtitle="Only when the server takes a static token.">
-            {{ form_row(form.token) }}
-        </twig:Panel>
+        <div class="grid gap-6">
+            <twig:Panel title="Bearer token" subtitle="Only when the server takes a static token.">
+                {{ form_row(form.token) }}
+            </twig:Panel>
 
-        <twig:Panel title="OAuth pre-registered client" subtitle="Optional. Without it, Reflex registers itself when the server allows it.">
-            <div class="grid gap-5">
-                {{ form_row(form.oauthClientId) }}
-                {{ form_row(form.oauthClientSecret) }}
-                {{ form_row(form.oauthIssuer) }}
-            </div>
-        </twig:Panel>
-
-        <div class="flex items-center gap-3">
-            <twig:Button variant="primary" type="submit">Connect</twig:Button>
-            <a href="{{ path('app_connection_index') }}" class="text-sm text-slate-500 hover:text-ink">Cancel</a>
+            <twig:Panel title="OAuth pre-registered client" subtitle="Optional. Without it, Reflex registers itself when the server allows it.">
+                <div class="grid gap-5">
+                    {{ form_row(form.oauthClientId) }}
+                    {{ form_row(form.oauthClientSecret) }}
+                    {{ form_row(form.oauthIssuer) }}
+                </div>
+            </twig:Panel>
         </div>
     {{ form_end(form) }}
 {% endblock %}

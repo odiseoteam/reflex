@@ -104,7 +104,7 @@ final class ReflexType extends AbstractType
             ])
             ->add('instructions', TextareaType::class, [
                 'attr' => ['rows' => 8, 'placeholder' => 'Classify new issues, look for duplicates and comment when you find one.'],
-                'help' => 'What the agent should do when the trigger fires.',
+                'help' => 'What the agent should do when the trigger fires. Markdown works.',
             ])
             ->add('model', ChoiceType::class, [
                 'choices' => array_combine(ReflexInput::MODELS, ReflexInput::MODELS),

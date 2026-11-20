@@ -1,0 +1,5 @@
+{% if text|trim is empty %}
+    <p class="text-slate-500">Nothing to preview.</p>
+{% else %}
+    {{ text|markdown_to_html }}
+{% endif %}

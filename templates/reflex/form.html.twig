@@ -8,68 +8,103 @@
     {% set back = reflex ? path('app_reflex_show', {id: reflex.id}) : path('app_reflex_index') %}
     <twig:PageHeader title="{{ reflex ? 'Edit ' ~ reflex.name : 'New reflex' }}" subtitle="When it fires, what the agent is told, which systems it can reach and how far it may go." :crumbs="reflex ? [{label: 'Reflexes', url: path('app_reflex_index')}, {label: reflex.name, url: path('app_reflex_show', {id: reflex.id})}] : [{label: 'Reflexes', url: path('app_reflex_index')}]" current="{{ reflex ? 'Edit' : 'New reflex' }}" />
 
-    {{ form_start(form, {attr: {class: 'grid max-w-3xl gap-6', 'data-controller': 'trigger-fields'}}) }}
-        <twig:Panel title="Trigger" subtitle="What makes it run.">
+    {% set tool = 'grid size-7 place-items-center rounded text-slate-500 hover:bg-white hover:text-ink cursor-pointer' %}
+    {% set tab = 'rounded px-2.5 py-1 text-[13px] font-medium text-slate-500 hover:text-ink aria-selected:bg-white aria-selected:text-ink aria-selected:shadow-sm' %}
+    {{ form_start(form, {attr: {class: 'grid items-start gap-6 lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)]', 'data-controller': 'trigger-fields'}}) }}
+        <twig:Panel title="Agent" subtitle="What it is called, what it is told, its model and the systems whose tools it gets.">
             <div class="grid gap-5">
                 {{ form_row(form.name) }}
-                <div class="grid gap-5 sm:grid-cols-2">
-                    {{ form_row(form.triggerSource, {attr: {'data-trigger-fields-target': 'source', 'data-action': 'trigger-fields#toggle'}}) }}
-                    <div data-trigger-for="generic github stripe">{{ form_row(form.triggerEvent) }}</div>
-                    <div data-trigger-for="schedule">{{ form_row(form.cron) }}</div>
+                <div data-controller="markdown-editor" data-markdown-editor-url-value="{{ path('app_markdown_preview') }}">
+                    {{ form_label(form.instructions) }}
+                    <div class="mt-1.5 overflow-hidden rounded-md border border-hairline bg-white focus-within:border-accent focus-within:ring-2 focus-within:ring-accent/15">
+                        <div class="flex flex-wrap items-center justify-between gap-2 border-b border-hairline bg-slate-50 px-2 py-1">
+                            <div role="tablist" aria-label="Instructions view" class="flex gap-1">
+                                <button type="button" role="tab" aria-selected="true" class="{{ tab }}" data-markdown-editor-target="writeTab" data-action="markdown-editor#write">Write</button>
+                                <button type="button" role="tab" aria-selected="false" class="{{ tab }}" data-markdown-editor-target="previewTab" data-action="markdown-editor#preview">Preview</button>
+                            </div>
+                            <markdown-toolbar for="{{ form.instructions.vars.id }}" class="flex items-center gap-0.5" data-markdown-editor-target="toolbar">
+                                <md-header class="{{ tool }} text-[13px] font-bold" title="Heading" aria-label="Heading">H</md-header>
+                                <md-bold class="{{ tool }} text-[13px] font-bold" title="Bold" aria-label="Bold">B</md-bold>
+                                <md-italic class="{{ tool }} font-serif text-[14px] italic" title="Italic" aria-label="Italic">I</md-italic>
+                                <md-unordered-list class="{{ tool }}" title="Bulleted list" aria-label="Bulleted list">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M9 6h11M9 12h11M9 18h11M4.5 6h.01M4.5 12h.01M4.5 18h.01"/></svg>
+                                </md-unordered-list>
+                                <md-ordered-list class="{{ tool }}" title="Numbered list" aria-label="Numbered list">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 6h10M10 12h10M10 18h10M4 4h1v5M4 9h2M6 19H4l2-3a1 1 0 0 0-2-1"/></svg>
+                                </md-ordered-list>
+                                <md-code class="{{ tool }}" title="Code" aria-label="Code">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m8 8-4 4 4 4M16 8l4 4-4 4"/></svg>
+                                </md-code>
+                                <md-link class="{{ tool }}" title="Link" aria-label="Link">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 14a4 4 0 0 0 6 0l3-3a4 4 0 0 0-6-6l-1 1M14 10a4 4 0 0 0-6 0l-3 3a4 4 0 0 0 6 6l1-1"/></svg>
+                                </md-link>
+                            </markdown-toolbar>
+                        </div>
+                        {{ form_widget(form.instructions, {widget_class: 'block w-full resize-y border-0 bg-white px-3 py-2.5 text-sm leading-6 text-ink focus:outline-none', attr: form.instructions.vars.attr|merge({rows: 14, 'data-markdown-editor-target': 'input'})}) }}
+                        <div hidden class="markdown px-4 py-3 text-sm" data-markdown-editor-target="preview" aria-live="polite"></div>
+                    </div>
+                    {{ form_help(form.instructions) }}
+                    {{ form_errors(form.instructions) }}
                 </div>
-                <fieldset data-trigger-for="poll" class="grid gap-5 rounded-lg border border-hairline p-4">
-                    <legend class="px-1 text-sm font-semibold">Poll an MCP tool</legend>
-                    <div class="grid gap-5 sm:grid-cols-2">
-                        {{ form_row(form.pollConnection) }}
-                        {{ form_row(form.pollTool) }}
-                    </div>
-                    {{ form_row(form.pollArguments) }}
-                    <div class="grid gap-5 sm:grid-cols-2">
-                        {{ form_row(form.pollIntervalMinutes) }}
-                        {{ form_row(form.pollItemKey) }}
-                    </div>
-                </fieldset>
-                <fieldset data-trigger-for="subscription" class="grid gap-5 rounded-lg border border-hairline p-4">
-                    <legend class="px-1 text-sm font-semibold">MCP subscription</legend>
-                    {{ form_row(form.subscriptionConnection) }}
-                    {{ form_row(form.subscriptionUris) }}
-                    {{ form_row(form.subscriptionListChanged) }}
-                </fieldset>
-                <fieldset data-trigger-for="absence" class="grid gap-5 rounded-lg border border-hairline p-4">
-                    <legend class="px-1 text-sm font-semibold">X without Y</legend>
-                    <div class="grid gap-5 sm:grid-cols-2">
-                        {{ form_row(form.absenceSource) }}
-                        {{ form_row(form.absenceCorrelation) }}
-                        {{ form_row(form.absenceWhen) }}
-                        {{ form_row(form.absenceMissing) }}
-                        {{ form_row(form.absenceWithinMinutes) }}
-                    </div>
-                </fieldset>
-            </div>
-        </twig:Panel>
-
-        <twig:Panel title="Agent" subtitle="Its instructions, model and the systems whose tools it gets.">
-            <div class="grid gap-5">
-                {{ form_row(form.instructions) }}
                 {{ form_row(form.model) }}
                 {{ form_row(form.connections) }}
             </div>
         </twig:Panel>
 
-        <twig:Panel title="Limits" subtitle="A run stops when it reaches any of them.">
-            <div class="grid gap-5">
-                <div class="grid gap-5 sm:grid-cols-3">
-                    {{ form_row(form.dailyTokenBudget) }}
-                    {{ form_row(form.maxToolCalls) }}
-                    {{ form_row(form.timeLimitSeconds) }}
+        <div class="grid gap-6">
+            <twig:Panel title="Trigger" subtitle="What makes it run.">
+                <div class="grid gap-5">
+                    <div class="grid gap-5">
+                        {{ form_row(form.triggerSource, {attr: {'data-trigger-fields-target': 'source', 'data-action': 'trigger-fields#toggle'}}) }}
+                        <div data-trigger-for="generic github stripe">{{ form_row(form.triggerEvent) }}</div>
+                        <div data-trigger-for="schedule">{{ form_row(form.cron) }}</div>
+                    </div>
+                    <fieldset data-trigger-for="poll" class="grid gap-5 rounded-lg border border-hairline p-4">
+                        <legend class="px-1 text-sm font-semibold">Poll an MCP tool</legend>
+                        <div class="grid gap-5 sm:grid-cols-2">
+                            {{ form_row(form.pollConnection) }}
+                            {{ form_row(form.pollTool) }}
+                        </div>
+                        {{ form_row(form.pollArguments) }}
+                        <div class="grid gap-5 sm:grid-cols-2">
+                            {{ form_row(form.pollIntervalMinutes) }}
+                            {{ form_row(form.pollItemKey) }}
+                        </div>
+                    </fieldset>
+                    <fieldset data-trigger-for="subscription" class="grid gap-5 rounded-lg border border-hairline p-4">
+                        <legend class="px-1 text-sm font-semibold">MCP subscription</legend>
+                        {{ form_row(form.subscriptionConnection) }}
+                        {{ form_row(form.subscriptionUris) }}
+                        {{ form_row(form.subscriptionListChanged) }}
+                    </fieldset>
+                    <fieldset data-trigger-for="absence" class="grid gap-5 rounded-lg border border-hairline p-4">
+                        <legend class="px-1 text-sm font-semibold">X without Y</legend>
+                        <div class="grid gap-5 sm:grid-cols-2">
+                            {{ form_row(form.absenceSource) }}
+                            {{ form_row(form.absenceCorrelation) }}
+                            {{ form_row(form.absenceWhen) }}
+                            {{ form_row(form.absenceMissing) }}
+                            {{ form_row(form.absenceWithinMinutes) }}
+                        </div>
+                    </fieldset>
                 </div>
-                {{ form_row(form.enabled) }}
-            </div>
-        </twig:Panel>
+            </twig:Panel>
 
-        <div class="flex items-center gap-3">
-            <twig:Button variant="primary" type="submit">Save</twig:Button>
-            <a href="{{ back }}" class="text-sm text-slate-500 hover:text-ink">Cancel</a>
+            <twig:Panel title="Limits" subtitle="A run stops when it reaches any of them.">
+                <div class="grid gap-5">
+                    {{ form_row(form.dailyTokenBudget) }}
+                    <div class="grid gap-5 sm:grid-cols-2">
+                        {{ form_row(form.maxToolCalls) }}
+                        {{ form_row(form.timeLimitSeconds) }}
+                    </div>
+                    {{ form_row(form.enabled) }}
+                </div>
+            </twig:Panel>
+
+            <div class="flex items-center gap-3">
+                <twig:Button variant="primary" type="submit">Save</twig:Button>
+                <a href="{{ back }}" class="text-sm text-slate-500 hover:text-ink">Cancel</a>
+            </div>
         </div>
     {{ form_end(form) }}
 {% endblock %}
