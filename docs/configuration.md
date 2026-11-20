@@ -13,7 +13,7 @@
 | `embeddings` | Text Embeddings Inference with `intfloat/multilingual-e5-small`, for the memory |
 | `demo` | The shop and helpdesk MCP servers of Polar Coffee Store |
 
-In development, `tailwind` also rebuilds the CSS on every change.
+The `php` container builds the CSS once when it starts.
 
 ## Environment variables
 
@@ -54,6 +54,7 @@ Run them with `docker compose exec php bin/console <command>`.
 ```bash
 docker compose exec php composer ci        # PHP CS Fixer, PHPStan and PHPUnit
 docker compose exec php composer cs:fix    # fix the code style
+docker compose exec php bin/console tailwind:build --watch    # rebuild the CSS while you edit templates
 ```
 
 Tests run against PostgreSQL inside a transaction per test, with the MCP servers and models replaced by test doubles. GitHub Actions runs the same checks on every push to `main` and every pull request, lints the container and the config, and starts the whole stack with Docker Compose as a smoke test.

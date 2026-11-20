@@ -56,6 +56,9 @@ jobs:
 
       - run: composer cs
       - run: composer phpstan
+
+      # The pages render the built CSS, which the container builds on start
+      - run: bin/console tailwind:build
       - run: composer test
 
   docker:
