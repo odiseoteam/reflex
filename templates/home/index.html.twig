@@ -4,7 +4,7 @@
 
 {% block body %}
     <twig:PageHeader :breadcrumb="false" title="Hi, {{ app.user.name|split(' ')|first }}">
-        <twig:block name="meta"><p class="mt-1 text-sm text-slate-500"><twig:Time at="now" format="day" /> · {{ enabled_reflexes }} {{ enabled_reflexes == 1 ? 'reflex' : 'reflexes' }} on</p></twig:block>
+        <twig:block name="meta"><p class="mt-1 text-sm text-slate-500"><twig:Time at="now" format="day" /> · {{ enabled_reflexes }} {{ enabled_reflexes == 1 ? 'reflex' : 'reflexes' }} enabled</p></twig:block>
         {% if is_granted('ROLE_ADMIN') %}
             <twig:Button variant="primary" type="button" popovertarget="simulate">Simulate event</twig:Button>
         {% endif %}
