@@ -114,7 +114,7 @@ The demo company is **Polar Coffee Store**, a small online coffee shop with its 
 > [!NOTE]
 > Without an API key, runs replay recorded model answers and show a **Replayed model** badge. The recordings cover every approve and reject path of the [demo scenarios](docs/demo.md).
 
-### Use a real model
+## Use a real model
 
 Put a key in `.env.local`, then restart the app and the worker with `docker compose restart php worker`:
 
@@ -127,7 +127,7 @@ HF_TOKEN=hf_...
 
 With a key, runs of that model's reflexes go to it live, and they can also be run by hand.
 
-### Connect an MCP client
+## Connect an MCP client
 
 Reflex is an MCP server too, behind OAuth. Add it to Claude Code, sign in, and choose what the app may do:
 
