@@ -118,7 +118,8 @@ final readonly class Poller
             }
 
             // Keyed by content: the same items again are one event, an item posted again is another.
-            return $this->fire($reflex, 'items.new', hash('sha256', json_encode($new, \JSON_THROW_ON_ERROR)), ['tool' => $poll->tool, 'items' => array_values($new)]);
+            // The arguments say where the items come from, e.g. the repository of an issue.
+            return $this->fire($reflex, 'items.new', hash('sha256', json_encode($new, \JSON_THROW_ON_ERROR)), ['tool' => $poll->tool, 'arguments' => $poll->arguments, 'items' => array_values($new)]);
         }
 
         $hash = hash('sha256', json_encode($data, \JSON_THROW_ON_ERROR));
@@ -130,7 +131,7 @@ final readonly class Poller
             return false;
         }
 
-        return $this->fire($reflex, 'result.changed', $hash.'@'.$this->clock->now()->format('U'), ['tool' => $poll->tool, 'result' => $data]);
+        return $this->fire($reflex, 'result.changed', $hash.'@'.$this->clock->now()->format('U'), ['tool' => $poll->tool, 'arguments' => $poll->arguments, 'result' => $data]);
     }
 
     /**

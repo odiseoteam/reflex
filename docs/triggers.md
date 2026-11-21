@@ -52,6 +52,8 @@ With an **item id field**, the result is read as a list and the reflex runs on i
 
 The first poll only takes note of what is there, so existing items don't fire a run.
 
+The run's event carries the tool and its arguments with the items or the result, so the agent knows where they come from, e.g. the repository of new issues.
+
 ## X without Y
 
 The reflex runs when a webhook event X isn't followed by an event Y of the same source within some minutes, for the same value of a field. For example: `order.paid` without `order.shipped` within 2 minutes, for the same `order_id`.

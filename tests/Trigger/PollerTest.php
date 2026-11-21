@@ -35,7 +35,7 @@ final class PollerTest extends KernelTestCase
 
     public function testTheFirstPollIsABaselineThenOnlyNewItemsRun(): void
     {
-        $poll = new PollTrigger('c', 'list_issues');
+        $poll = new PollTrigger('c', 'list_issues', ['owner' => 'odiseoteam', 'repo' => 'reflex']);
         $poller = self::getContainer()->get(Poller::class);
 
         self::assertFalse($poller->compare($this->reflex, $poll, ['issues' => [['id' => 1], ['id' => 2]]]));
@@ -47,7 +47,7 @@ final class PollerTest extends KernelTestCase
         $runs = $this->entityManager->getRepository(Run::class)->findBy(['reflex' => $this->reflex]);
         self::assertCount(1, $runs);
         self::assertSame('items.new', $runs[0]->getEvent()?->getType());
-        self::assertSame([['id' => 3, 'title' => 'New']], $runs[0]->getEvent()->getPayload()['items']);
+        self::assertSame(['tool' => 'list_issues', 'arguments' => ['owner' => 'odiseoteam', 'repo' => 'reflex'], 'items' => [['id' => 3, 'title' => 'New']]], $runs[0]->getEvent()->getPayload());
     }
 
     public function testWithoutAnItemKeyAnyChangeRuns(): void
