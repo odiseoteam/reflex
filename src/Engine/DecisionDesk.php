@@ -164,12 +164,7 @@ final readonly class DecisionDesk
         $result = null;
         $failure = null;
         try {
-            $client = $this->clientFactory->connect($connection, $questions);
-            try {
-                $result = $client->callTool($decision->getRemoteToolName(), $decision->getArguments());
-            } finally {
-                $client->disconnect();
-            }
+            $result = $this->clientFactory->callTool($connection, $decision->getRemoteToolName(), $decision->getArguments(), $questions);
         } catch (\Throwable $e) {
             $failure = $e;
         }

@@ -74,12 +74,7 @@ final readonly class Poller
         }
 
         try {
-            $client = $this->clientFactory->connect($connection);
-            try {
-                $result = $client->callTool($poll->tool, $poll->arguments);
-            } finally {
-                $client->disconnect();
-            }
+            $result = $this->clientFactory->callTool($connection, $poll->tool, $poll->arguments);
         } catch (\Throwable $e) {
             $this->logger->error('Poll of {reflex} failed.', ['reflex' => $reflex->getName(), 'exception' => $e]);
 

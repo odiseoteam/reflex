@@ -16,6 +16,7 @@ use Mcp\Client\Handler\Request\ElicitationCallbackInterface;
 use Mcp\Client\Handler\Request\ElicitationRequestHandler;
 use Mcp\Client\Transport\HttpTransport;
 use Mcp\Schema\ClientCapabilities;
+use Mcp\Schema\Result\CallToolResult;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpClient\NoPrivateNetworkHttpClient;
@@ -80,6 +81,27 @@ final readonly class McpClientFactory
         ));
 
         return $client;
+    }
+
+    /**
+     * Calls one tool on a fresh client. The tools are listed first, since the SDK only sends the
+     * Mcp-Param-* headers that a tool's x-mcp-header annotations require for tools it has listed.
+     *
+     * @param array<string, mixed> $arguments
+     */
+    public function callTool(Connection $connection, string $name, array $arguments, ?ElicitationCallbackInterface $elicitation = null): CallToolResult
+    {
+        $client = $this->connect($connection, $elicitation);
+        try {
+            $cursor = null;
+            do {
+                $cursor = $client->listTools($cursor)->nextCursor;
+            } while (null !== $cursor);
+
+            return $client->callTool($name, $arguments);
+        } finally {
+            $client->disconnect();
+        }
     }
 
     public function createAuthenticator(Connection $connection): OAuthAuthenticator
